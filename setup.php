@@ -116,9 +116,9 @@ function plugin_version_simcard() {
    return array (
        'name'           => __s('Sim cards management', 'simcard'),
        'version'        => PLUGIN_SIMCARD_VERSION,
-       'author'         => '<a href="https://www.pgum.eu/">PGUM s.r.l.</a>, <a href="https://github.com/pluginsglpi/simcard">Simcard Plugin Team</a>',
+       'author'         => '<a href="https://www.pgum.eu/">PGUM s.r.l.</a>, <a href="https://github.com/i-Vertix/simcard">i-Vertix NMS</a>',
        'license'        => 'GPLv2',
-       'homepage'       => 'https://github.com/ivertix-dev/simcard',
+       'homepage'       => 'https://github.com/i-Vertix/simcard',
        'minGlpiVersion' => PLUGIN_SIMCARD_GLPI_MIN_VERSION
    );
 }
