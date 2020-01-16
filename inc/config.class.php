@@ -64,7 +64,7 @@ class PluginSimcardConfig extends CommonDBTM {
                 `value` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `unicity` (`type`)
-                ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1";
+                ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1";
            $DB->query($query) or die($DB->error());
            $query = "INSERT INTO `" . $table . "` 
                 (`type`,`value`)

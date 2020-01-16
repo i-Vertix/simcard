@@ -144,7 +144,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation{
               PRIMARY KEY (`id`),
               KEY `plugin_simcard_simcards_id` (`plugin_simcard_simcards_id`),
               KEY `item` (`itemtype`,`items_id`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
          $DB->query($query) or die ($DB->error());
       }
    }

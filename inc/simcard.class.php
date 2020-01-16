@@ -598,7 +598,7 @@ class PluginSimcardSimcard extends CommonDBTM {
               KEY `is_deleted` (`is_deleted`),
               KEY `is_helpdesk_visible` (`is_helpdesk_visible`),
               KEY `is_global` (`is_global`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;";
+            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;";
          $DB->query($query) or die("Error adding table $table");
       }
       $query = "INSERT INTO `glpi_displaypreferences` (`itemtype`, `num`, `rank`, `users_id`) VALUES ('PluginSimcardSimcard', 27, 1, 0);";

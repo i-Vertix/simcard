@@ -52,7 +52,7 @@ class PluginSimcardSimcardType extends CommonDropdown {
            `comment` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
            PRIMARY KEY (`id`),
            KEY `name` (`name`)
-         ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+         ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
          $DB->query($query) or die("Error adding table $table");
       }
    }
