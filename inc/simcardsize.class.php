@@ -71,6 +71,8 @@ class PluginSimcardSimcardSize extends CommonDropdown {
     **/
    static function upgrade(Migration $migration) {
       global $DB;
+      $table = getTableForItemType(__CLASS__);
+      $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
    }
    
    static function uninstall() {

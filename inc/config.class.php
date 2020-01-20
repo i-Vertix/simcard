@@ -89,6 +89,7 @@ class PluginSimcardConfig extends CommonDBTM {
                       SET `value`= '" . PLUGIN_SIMCARD_VERSION . "'
                       WHERE `type`='Version'";
             $DB->query($query) or die($DB->error());
+            $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
       }
    }
     
