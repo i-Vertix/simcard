@@ -29,23 +29,32 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
-include ('../../../inc/includes.php');
+use Glpi\Event;
 
-PluginSimcardSimcard::canUpdate();
+include('../../../inc/includes.php');
+
+Session::checkCentralAccess();
 
 $simcard_item = new PluginSimcardSimcard_Item();
 if (isset($_POST["additem"])) {
-	$simcard_item->can(-1, CREATE, $_POST);
-   if ($newID = $simcard_item->add($_POST)) {
-   }
+    if (isset($_POST["items_id"]) && ($_POST["items_id"] > 0)) {
+        $simcard_item->check(-1, CREATE, $_POST);
+        if ($simcard_item->add($_POST)) {
+            Event::log($_POST["plugin_simcard_simcards_id"], "simcards", 5, "inventory",
+                //TRANS: %s is the user login
+                sprintf(__('%s connects an item'), $_SESSION["glpiname"]));
+        }
+    }
+    Html::back();
 } else if (isset($_POST["delete_items"])) {
-   if (isset($_POST['todelete'])) {
-      foreach ($_POST['todelete'] as $id => $val) {
-         if ($val == 'on') {
-            $simcard_item->can($id, DELETE, $_POST);
-            $ok = $simcard_item->delete(array('id' => $id));
-         }
-      }
-   }
+    if (isset($_POST['todelete'])) {
+        foreach ($_POST['todelete'] as $id => $val) {
+            if ($val == 'on') {
+                $simcard_item->check($id, PURGE);
+                $simcard_item->delete(array('id' => $id), 1);
+            }
+        }
+    }
+    Html::back();
 }
-Html::back();
+Html::displayErrorAndDie('Lost');

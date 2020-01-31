@@ -61,37 +61,9 @@ class PluginSimcardSimcard_Item extends CommonDBRelation{
       global $LANG;
       return __s('Direct Connections');
    }
-   
-   /**
-    * Check right on an item - overloaded to check is_global
-    *
-    * @param $ID     ID of the item (-1 if new item)
-    * @param $right  Right to check : r / w / recursive
-    * @param $input  array of input data (used for adding item) (default NULL)
-    *
-    * @return boolean
-   **/
-   function can($ID, $right, array &$input=NULL) {
 
-      if ($ID<0) {
-         // Ajout
-         if (!($item = new $input['itemtype'])) {
-            return false;
-         }
-
-         if (!$item->getFromDB($input['items_id'])) {
-            return false;
-         }
-         if ($item->getField('is_global')==0
-             && self::countForItem($ID) > 0) {
-               return false;
-         }
-      }
-      return parent::can($ID, $right, $input);
-   }
-
-   static function countForItem($id) {
-   	  return countElementsInTable(getTableForItemType(__CLASS__), ["WHERE" => ["plugin_simcard_simcards_id" => $id]]);
+   static function countForItem(CommonDBTM $item) {
+   	  return countElementsInTable(getTableForItemType(__CLASS__), ["WHERE" => ["plugin_simcard_simcards_id" => $item->getField('id')]]);
    }
 
    /**
