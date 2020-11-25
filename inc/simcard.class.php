@@ -167,13 +167,15 @@ class PluginSimcardSimcard extends CommonDBTM {
                      array('value' => $this->fields["plugin_simcard_simcardtypes_id"]));
       echo "</td></tr>\n";
 
+      $randDropdown = mt_rand();
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__s('Technician in charge of the hardware')."</td>";
       echo "<td>";
-      User::dropdown(array('name'   => 'users_id_tech',
-                           'value'  => $this->fields["users_id_tech"],
-                           'right'  => 'interface',
-                           'entity' => $this->fields["entities_id"]));
+        User::dropdown(['name'   => 'users_id_tech',
+            'value'  => $this->fields["users_id_tech"],
+            'right'  => 'own_ticket',
+            'entity' => $this->fields["entities_id"],
+            'rand'   => $randDropdown]);
       echo "</td>";
       echo "<td>".__s('Size', 'simcard')."</td>";
       echo "<td>";
@@ -181,14 +183,17 @@ class PluginSimcardSimcard extends CommonDBTM {
                      array('value' => $this->fields["plugin_simcard_simcardsizes_id"]));
       echo "</td></tr>\n";
 
-//       TODO : Add group in charge of hardware      
+      $randDropdown = mt_rand();
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__s('Group in charge of the hardware')."</td>";
       echo "<td>";
-      Group::dropdown(array('name'      => 'groups_id_tech',
-      'value'     => $this->fields['groups_id_tech'],
-      'entity'    => $this->fields['entities_id'],
-      'condition' => '`is_assign`'));
+        Group::dropdown([
+            'name'      => 'groups_id_tech',
+            'value'     => $this->fields['groups_id_tech'],
+            'entity'    => $this->fields['entities_id'],
+            'condition' => ['is_assign' => 1],
+            'rand' => $randDropdown
+        ]);
       echo "</td>";
       
       echo "<td>".__s('Voltage', 'simcard')."</td>";
@@ -207,14 +212,17 @@ class PluginSimcardSimcard extends CommonDBTM {
       echo "<td>" . __s('Associable items to a ticket') . "&nbsp;:</td><td>";
       Dropdown::showYesNo('is_helpdesk_visible',$this->fields['is_helpdesk_visible']);
       echo "</td></tr>\n";
-   
-      
+
+
+        $randDropdown = mt_rand();
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__s('User')."</td>";
       echo "<td>";
-      User::dropdown(array('value'  => $this->fields["users_id"],
-                           'entity' => $this->fields["entities_id"],
-                           'right'  => 'all'));
+        User::dropdown(['name'   => 'users_id_tech',
+            'value'  => $this->fields["users_id_tech"],
+            'right'  => 'own_ticket',
+            'entity' => $this->fields["entities_id"],
+            'rand'   => $randDropdown]);
       echo "</td>";
 
       echo "<input type='hidden' name='is_global' value='1'>";
@@ -229,8 +237,13 @@ class PluginSimcardSimcard extends CommonDBTM {
       echo "<tr class='tab_bg_1'>";
       echo "<td>".__s('Group')."</td>";
       echo "<td>";
-      Dropdown::show('Group', array('value'     => $this->fields["groups_id"],
-                                    'entity'    => $this->fields["entities_id"]));
+        Group::dropdown([
+            'name'      => 'groups_id_tech',
+            'value'     => $this->fields['groups_id_tech'],
+            'entity'    => $this->fields['entities_id'],
+            'condition' => ['is_assign' => 1],
+            'rand' => $randDropdown
+        ]);
 
       echo "</td></tr>\n";
       
