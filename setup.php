@@ -128,8 +128,8 @@ function plugin_version_simcard() {
 
 // Optional : check prerequisites before install : may print errors or add to message after redirect
 function plugin_simcard_check_prerequisites() {
-   if (version_compare(GLPI_VERSION, PLUGIN_SIMCARD_GLPI_MIN_VERSION, 'lt')) {
-      echo "This plugin requires GLPI >= " . PLUGIN_SIMCARD_GLPI_MIN_VERSION;
+   if (version_compare(GLPI_VERSION, PLUGIN_SIMCARD_GLPI_MIN_VERSION, 'lt') || version_compare(GLPI_VERSION, PLUGIN_SIMCARD_GLPI_MAX_VERSION, 'ge')) {
+      echo "This plugin requires GLPI >= " . PLUGIN_SIMCARD_GLPI_MIN_VERSION . " and GLPI < " . PLUGIN_SIMCARD_GLPI_MAX_VERSION;
       return false;
    }
    return true;
