@@ -30,26 +30,26 @@
  ---------------------------------------------------------------------- */
 
 /**
- * 
+ *
  * Determine if the plugin should be installed or upgraded
- * 
+ *
  * Returns 0 if the plugin is not yet installed
  * Returns 1 if the plugin is already installed
- * 
+ *
  * @since 1.3
- * 
+ *
  * @return number
  */
 function plugin_simcard_currentVersion() {
    global $DB;
    // Saves the current version to not re-detect it on multiple calls
    static $currentVersion = null;
-   
+
    if ($currentVersion === null) {
       if (!$DB->TableExists('glpi_plugin_simcard_simcards_items') && !$DB->TableExists('glpi_plugin_simcard_configs')) {
          // the plugin seems not installed
          $currentVersion = 0;
-      } else {      
+      } else {
          if ($DB->TableExists('glpi_plugin_simcard_configs')) {
             // plugin installed, get the current version in the plugin's configuration
             $pluginSimcardConfig = new PluginSimcardConfig();
@@ -69,7 +69,7 @@ function plugin_simcard_install() {
    include_once (GLPI_ROOT."/plugins/simcard/inc/phoneoperator.class.php");
    include_once (GLPI_ROOT."/plugins/simcard/inc/simcard_item.class.php");
    include_once (GLPI_ROOT."/plugins/simcard/inc/config.class.php");
-    
+
    $migration = new Migration(PLUGIN_SIMCARD_VERSION);
     if (plugin_simcard_currentVersion() == 0) {
         // Installation of the plugin
@@ -105,7 +105,7 @@ function plugin_simcard_uninstall() {
    include_once (GLPI_ROOT."/plugins/simcard/inc/phoneoperator.class.php");
    include_once (GLPI_ROOT."/plugins/simcard/inc/simcard_item.class.php");
    include_once (GLPI_ROOT."/plugins/simcard/inc/config.class.php");
-    
+
    PluginSimcardProfile::uninstall();
    PluginSimcardSimcard::uninstall();
    PluginSimcardSimcardSize::uninstall();
@@ -166,7 +166,7 @@ function plugin_simcard_AssignToTicket($types) {
    global $LANG;
 
    if (Session::haveRight(PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD, PluginSimcardProfile::SIMCARD_ASSOCIATE_TICKET)) {
-      $types['PluginSimcardSimcard'] = _sn('SIM card', 'SIM cards', 2, 'simcard');
+    $types['PluginSimcardSimcard'] = 'SIM Cards';
    }
 
    return $types;
@@ -176,23 +176,21 @@ function plugin_simcard_AssignToTicket($types) {
 
 function plugin_simcard_forceGroupBy($type) {
 
-   return true;
+//   return true;
    switch ($type) {
       case 'PluginSimcardSimcard':
          return true;
-         break;
-
    }
    return false;
 }
 
 function plugin_simcard_getAddSearchOptions($itemtype) {
    global $LANG;
-    
+
    $sopt = array();
 
    $reservedTypeIndex = PluginSimcardConfig::RESERVED_TYPE_RANGE_MIN;
-   
+
    if (in_array($itemtype,PluginSimcardSimcard_Item::getClasses())) {
    	  if (PluginSimcardSimcard::canView()) {
          $sopt[$reservedTypeIndex]['table']         = 'glpi_plugin_simcard_simcards';
@@ -241,17 +239,17 @@ function plugin_item_purge_simcard($item) {
 
 function plugin_datainjection_populate_simcard() {
    global $INJECTABLE_TYPES;
-   
+
    $INJECTABLE_TYPES['PluginSimcardSimcardInjection']      = 'simcard';
 }
 
 /**
- * 
+ *
  * Determine if the plugin should be installed or upgraded
- * 
+ *
  * Returns 0 if the plugin is not yet installed
  * Returns 1 if the plugin is already installed
- * 
+ *
  * @since 1.3
  */
 function plugin_simcard_postinit() {
@@ -270,9 +268,9 @@ function plugin_simcard_postinit() {
 
 /**
  * Update helpdesk_item_type in a profile if a ProfileRight changes or is created
- * 
+ *
  * Add or remove simcard item type to match the status of "associable to tickets" in simcard's right
- * 
+ *
  * @since 1.4.1
  */
 function plugin_simcard_profileRightUpdate($item) {

@@ -281,7 +281,6 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
 
 
         $number = count($results);
-
         if (PluginSimcardSimcard::canUpdate()) {
             echo "<div class='firstbloc'>";
             echo "<form id='items' name='items' method='post' action='" . Toolbox::getItemTypeFormURL(__CLASS__) . "'>";

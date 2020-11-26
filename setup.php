@@ -29,10 +29,11 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
-define ("PLUGIN_SIMCARD_VERSION", "1.0.2");
+define ("PLUGIN_SIMCARD_VERSION", "1.1.0");
 
 // Minimal GLPI version, inclusive
-define ("PLUGIN_SIMCARD_GLPI_MIN_VERSION", "9.4.3");
+define ("PLUGIN_SIMCARD_GLPI_MIN_VERSION", "9.5");
+define ("PLUGIN_SIMCARD_GLPI_MAX_VERSION", "9.6");
 
 // Init the hooks of the plugins -Needed
 function plugin_init_simcard() {
@@ -119,7 +120,9 @@ function plugin_version_simcard() {
        'author'         => '<a href="https://www.pgum.eu/">PGUM s.r.l.</a>, <a href="https://github.com/i-Vertix/simcard">i-Vertix NMS</a>',
        'license'        => 'GPLv2',
        'homepage'       => 'https://github.com/i-Vertix/simcard',
-       'minGlpiVersion' => PLUGIN_SIMCARD_GLPI_MIN_VERSION
+       'minGlpiVersion' => PLUGIN_SIMCARD_GLPI_MIN_VERSION,
+       'requirements' => ['glpi' => ['min' => PLUGIN_SIMCARD_GLPI_MIN_VERSION,
+           'max' => PLUGIN_SIMCARD_GLPI_MAX_VERSION]]
    );
 }
 
