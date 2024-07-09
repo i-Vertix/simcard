@@ -53,7 +53,7 @@ class PluginSimcardPhoneOperator extends CommonDropdown {
               PRIMARY KEY (`id`),
               KEY `name` (`name`)
             ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;";
-         $DB->query($query) or die($DB->error());
+         $DB->doQuery($query) or die($DB->error());
       }
    }
    
@@ -65,7 +65,7 @@ class PluginSimcardPhoneOperator extends CommonDropdown {
    static function upgrade(Migration $migration) {
       global $DB;
       $table = getTableForItemType(__CLASS__);
-      $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
+      $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
    }
    
    static function uninstall() {
@@ -81,7 +81,7 @@ class PluginSimcardPhoneOperator extends CommonDropdown {
       $dropdownTranslation->deleteByCriteria(array("itemtype LIKE 'PluginSimcardPhoneOperator'"), 1);
 
       $table = getTableForItemType(__CLASS__);
-      $DB->query("DROP TABLE IF EXISTS `$table`");
+      $DB->doQuery("DROP TABLE IF EXISTS `$table`");
    }
 
    static function transfer($ID, $entity) {
@@ -96,7 +96,7 @@ class PluginSimcardPhoneOperator extends CommonDropdown {
                    FROM `".$phoneOperator->getTable()."`
                    WHERE `id` = '$ID'";
 
-         if ($result = $DB->query($query)) {
+         if ($result = $DB->doQuery($query)) {
             if ($DB->numrows($result)) {
                $data                 = $DB->fetch_assoc($result);
                $data                 = Toolbox::addslashes_deep($data);

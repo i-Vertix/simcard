@@ -36,41 +36,43 @@
  * Returns 0 if the plugin is not yet installed
  * Returns 1 if the plugin is already installed
  *
+ * @return number|string
  * @since 1.3
  *
- * @return number
  */
-function plugin_simcard_currentVersion() {
-   global $DB;
-   // Saves the current version to not re-detect it on multiple calls
-   static $currentVersion = null;
+function plugin_simcard_currentVersion()
+{
+    global $DB;
+    // Saves the current version to not re-detect it on multiple calls
+    static $currentVersion = null;
 
-   if ($currentVersion === null) {
-      if (!$DB->TableExists('glpi_plugin_simcard_simcards_items') && !$DB->TableExists('glpi_plugin_simcard_configs')) {
-         // the plugin seems not installed
-         $currentVersion = 0;
-      } else {
-         if ($DB->TableExists('glpi_plugin_simcard_configs')) {
-            // plugin installed, get the current version in the plugin's configuration
-            $pluginSimcardConfig = new PluginSimcardConfig();
-            $currentVersion = $pluginSimcardConfig->getValue('Version');
-         }
-      }
-   }
-   return $currentVersion;
+    if ($currentVersion === null) {
+        if (!$DB->TableExists('glpi_plugin_simcard_simcards_items') && !$DB->TableExists('glpi_plugin_simcard_configs')) {
+            // the plugin seems not installed
+            $currentVersion = 0;
+        } else {
+            if ($DB->TableExists('glpi_plugin_simcard_configs')) {
+                // plugin installed, get the current version in the plugin's configuration
+                $pluginSimcardConfig = new PluginSimcardConfig();
+                $currentVersion = $pluginSimcardConfig->getValue('Version');
+            }
+        }
+    }
+    return $currentVersion;
 }
 
-function plugin_simcard_install() {
-   include_once (GLPI_ROOT."/plugins/simcard/inc/profile.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcard.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcardsize.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcardvoltage.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcardtype.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/phoneoperator.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcard_item.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/config.class.php");
+function plugin_simcard_install()
+{
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/profile.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcard.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcardsize.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcardvoltage.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcardtype.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/phoneoperator.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcard_item.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/config.class.php");
 
-   $migration = new Migration(PLUGIN_SIMCARD_VERSION);
+    $migration = new Migration(PLUGIN_SIMCARD_VERSION);
     if (plugin_simcard_currentVersion() == 0) {
         // Installation of the plugin
         PluginSimcardConfig::install($migration);
@@ -83,7 +85,6 @@ function plugin_simcard_install() {
         PluginSimcardSimcard_Item::install($migration);
     } else {
         // Updating the plugin
-        PluginSimcardConfig::upgrade($migration);
         PluginSimcardProfile::upgrade($migration);
         PluginSimcardSimcard::upgrade($migration);
         PluginSimcardSimcardSize::upgrade($migration);
@@ -91,156 +92,173 @@ function plugin_simcard_install() {
         PluginSimcardSimcardType::upgrade($migration);
         PluginSimcardPhoneOperator::upgrade($migration);
         PluginSimcardSimcard_Item::upgrade($migration);
-
+        // UPDATE CONFIG AS LAST (so other upgrades can use the currentVersion function)
+        PluginSimcardConfig::upgrade($migration);
     }
-   return true;
+    return true;
 }
 
-function plugin_simcard_uninstall() {
-   include_once (GLPI_ROOT."/plugins/simcard/inc/profile.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcard.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcardsize.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcardvoltage.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcardtype.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/phoneoperator.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/simcard_item.class.php");
-   include_once (GLPI_ROOT."/plugins/simcard/inc/config.class.php");
+function plugin_simcard_uninstall()
+{
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/profile.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcard.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcardsize.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcardvoltage.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcardtype.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/phoneoperator.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/simcard_item.class.php");
+    include_once(GLPI_ROOT . "/plugins/simcard/inc/config.class.php");
 
-   PluginSimcardProfile::uninstall();
-   PluginSimcardSimcard::uninstall();
-   PluginSimcardSimcardSize::uninstall();
-   PluginSimcardSimcardVoltage::uninstall();
-   PluginSimcardSimcardType::uninstall();
-   PluginSimcardPhoneOperator::uninstall();
-   PluginSimcardSimcard_Item::uninstall();
-   PluginSimcardConfig::uninstall();
-   return true;
+    PluginSimcardProfile::uninstall();
+    PluginSimcardSimcard::uninstall();
+    PluginSimcardSimcardSize::uninstall();
+    PluginSimcardSimcardVoltage::uninstall();
+    PluginSimcardSimcardType::uninstall();
+    PluginSimcardPhoneOperator::uninstall();
+    PluginSimcardSimcard_Item::uninstall();
+    PluginSimcardConfig::uninstall();
+    return true;
 }
 
 // Define dropdown relations
-function plugin_simcard_getDatabaseRelations() {
+function plugin_simcard_getDatabaseRelations()
+{
 
-   $plugin = new Plugin();
+    $plugin = new Plugin();
 
-   if ($plugin->isActivated("simcard")) {
-      return array(
-                  "glpi_plugin_simcard_simcardsizes"
-                     => array("glpi_plugin_simcard_simcards"=>"plugin_simcard_simcardsizes_id"),
-                  "glpi_plugin_simcard_simcardvoltages"
-                     => array("glpi_plugin_simcard_simcards"=>"plugin_simcard_simcardvoltages_id"),
-                  "glpi_plugin_simcard_phoneoperators"
-                     => array("glpi_plugin_simcard_simcards"=>"plugin_simcard_phoneoperators_id"),
-                  "glpi_plugin_simcard_simcardtypes"
-                     => array("glpi_plugin_simcard_simcards"=>"plugin_simcard_simcardtypes_id"),
-                  "glpi_users" => array("glpi_plugin_simcard_simcards"=>"users_id"),
-                  "glpi_users" => array("glpi_plugin_simcard_simcards"=>"users_id_tech"),
-                  "glpi_groups" => array("glpi_plugin_simcard_simcards"=>"groups_id"),
-                  "glpi_groups" => array("glpi_plugin_simcard_simcards"=>"groups_id_tech"),
-                  "glpi_manufacturers" => array("glpi_plugin_simcard_simcards" => "manufacturers_id"),
-                  "glpi_states" => array("glpi_plugin_simcard_simcards" => "states_id"),
-                  "glpi_locations" => array("glpi_plugin_simcard_simcards"=>"locations_id"));
-                  //"glpi_profiles" => array ("glpi_plugin_simcard_profiles" => "profiles_id"));
-   } else {
-      return array();
-   }
+    if ($plugin->isActivated("simcard")) {
+        return array(
+            "glpi_plugin_simcard_simcardsizes"
+            => array("glpi_plugin_simcard_simcards" => "plugin_simcard_simcardsizes_id"),
+            "glpi_plugin_simcard_simcardvoltages"
+            => array("glpi_plugin_simcard_simcards" => "plugin_simcard_simcardvoltages_id"),
+            "glpi_plugin_simcard_phoneoperators"
+            => array("glpi_plugin_simcard_simcards" => "plugin_simcard_phoneoperators_id"),
+            "glpi_plugin_simcard_simcardtypes"
+            => array("glpi_plugin_simcard_simcards" => "plugin_simcard_simcardtypes_id"),
+            "glpi_users" => array("glpi_plugin_simcard_simcards" => [["users_id", "users_id_tech"]]),
+            "glpi_groups" => array("glpi_plugin_simcard_simcards" => [["groups_id", "groups_id_tech"]]),
+            "glpi_manufacturers" => array("glpi_plugin_simcard_simcards" => "manufacturers_id"),
+            "glpi_states" => array("glpi_plugin_simcard_simcards" => "states_id"),
+            "glpi_locations" => array("glpi_plugin_simcard_simcards" => "locations_id")
+        );
+        //"glpi_profiles" => array ("glpi_plugin_simcard_profiles" => "profiles_id"));
+    } else {
+        return array();
+    }
 }
 
 
 // Define Dropdown tables to be manage in GLPI :
-function plugin_simcard_getDropdown() {
-   global $LANG;
+function plugin_simcard_getDropdown()
+{
+    global $LANG;
 
-   $plugin = new Plugin();
-   if ($plugin->isActivated("simcard")) {
-     return array('PluginSimcardSimcardSize'    => __('Size', 'simcard'),
-                   'PluginSimcardPhoneOperator'  => __('Provider', 'simcard'),
-                   'PluginSimcardSimcardVoltage' => __('Voltage', 'simcard'),
-                   'PluginSimcardSimcardType' => __('Type of SIM card', 'simcard'));
-   } else {
-      return array();
-   }
-
+    $plugin = new Plugin();
+    if ($plugin->isActivated("simcard")) {
+        return array(
+            'PluginSimcardSimcardSize' => __('Size', 'simcard'),
+            'PluginSimcardPhoneOperator' => __('Provider', 'simcard'),
+            'PluginSimcardSimcardVoltage' => __('Voltage', 'simcard'),
+            'PluginSimcardSimcardType' => __('Type of SIM card', 'simcard')
+        );
+    } else {
+        return array();
+    }
 }
 
-function plugin_simcard_AssignToTicket($types) {
-   global $LANG;
+function plugin_simcard_AssignToTicket($types)
+{
+    global $LANG;
 
-   if (Session::haveRight(PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD, PluginSimcardProfile::SIMCARD_ASSOCIATE_TICKET)) {
-    $types['PluginSimcardSimcard'] = 'SIM Cards';
-   }
+    if (Session::haveRight(PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD, PluginSimcardProfile::SIMCARD_ASSOCIATE_TICKET)) {
+        $types['PluginSimcardSimcard'] = 'SIM Cards';
+    }
 
-   return $types;
+    return $types;
 }
 
 //force groupby for multible links to items
 
-function plugin_simcard_forceGroupBy($type) {
+function plugin_simcard_forceGroupBy($type)
+{
 
-//   return true;
-   switch ($type) {
-      case 'PluginSimcardSimcard':
-         return true;
-   }
-   return false;
+    //   return true;
+    switch ($type) {
+        case 'PluginSimcardSimcard':
+            return true;
+    }
+    return false;
 }
 
-function plugin_simcard_getAddSearchOptions($itemtype) {
-   global $LANG;
+function plugin_simcard_getAddSearchOptions($itemtype)
+{
+    global $LANG;
 
-   $sopt = array();
+    $sopt = array();
 
-   $reservedTypeIndex = PluginSimcardConfig::RESERVED_TYPE_RANGE_MIN;
+    $reservedTypeIndex = PluginSimcardConfig::RESERVED_TYPE_RANGE_MIN;
 
-   if (in_array($itemtype,PluginSimcardSimcard_Item::getClasses())) {
-   	  if (PluginSimcardSimcard::canView()) {
-         $sopt[$reservedTypeIndex]['table']         = 'glpi_plugin_simcard_simcards';
-         $sopt[$reservedTypeIndex]['field']         = 'name';
-         $sopt[$reservedTypeIndex]['name']          = _sn('SIM card', 'SIM cards', 2, 'simcard')." - ".__s('Name');
-         $sopt[$reservedTypeIndex]['forcegroupby']  = true;
-         $sopt[$reservedTypeIndex]['massiveaction'] = false;
-         $sopt[$reservedTypeIndex]['datatype']      = 'itemlink';
-         $sopt[$reservedTypeIndex]['itemlink_type'] = 'PluginSimcardSimcard';
-         $sopt[$reservedTypeIndex]['joinparams']    = array('beforejoin'
-                                                            => array('table'      => 'glpi_plugin_simcard_simcards_items',
-                                                            'joinparams' => array('jointype' => 'itemtype_item')));
-         $reservedTypeIndex++;
-         $sopt[$reservedTypeIndex]['table']         = 'glpi_plugin_simcard_simcards';
-         $sopt[$reservedTypeIndex]['field']         = 'phonenumber';
-         $sopt[$reservedTypeIndex]['name']          = _sn('SIM card', 'SIM cards', 2, 'simcard')." - ".__s('Phone number', 'simcard');
-         $sopt[$reservedTypeIndex]['massiveaction'] = false;
-         $sopt[$reservedTypeIndex]['forcegroupby']  = true;
-         $sopt[$reservedTypeIndex]['joinparams']    = array('beforejoin'
-                                                            => array('table'      => 'glpi_plugin_simcard_simcards_items',
-                                                            'joinparams' => array('jointype' => 'itemtype_item')));
-         $reservedTypeIndex++;
-         $sopt[$reservedTypeIndex]['table']         = 'glpi_plugin_simcard_simcards';
-         $sopt[$reservedTypeIndex]['field']         = 'serial';
-         $sopt[$reservedTypeIndex]['name']          = _sn('SIM card', 'SIM cards', 2, 'simcard')." - ".__s('IMSI', 'simcard');
-         $sopt[$reservedTypeIndex]['massiveaction'] = false;
-         $sopt[$reservedTypeIndex]['forcegroupby']  = true;
-         $sopt[$reservedTypeIndex]['joinparams']    = array('beforejoin'
-                                                            => array('table'      => 'glpi_plugin_simcard_simcards_items',
-                                                            'joinparams' => array('jointype' => 'itemtype_item')));
-   	  }
-   }
-   return $sopt;
+    if (in_array($itemtype, PluginSimcardSimcard_Item::getClasses())) {
+        if (PluginSimcardSimcard::canView()) {
+            $sopt[$reservedTypeIndex]['table'] = 'glpi_plugin_simcard_simcards';
+            $sopt[$reservedTypeIndex]['field'] = 'name';
+            $sopt[$reservedTypeIndex]['name'] = _sn('SIM card', 'SIM cards', 2, 'simcard') . " - " . __s('Name');
+            $sopt[$reservedTypeIndex]['forcegroupby'] = true;
+            $sopt[$reservedTypeIndex]['massiveaction'] = false;
+            $sopt[$reservedTypeIndex]['datatype'] = 'itemlink';
+            $sopt[$reservedTypeIndex]['itemlink_type'] = 'PluginSimcardSimcard';
+            $sopt[$reservedTypeIndex]['joinparams'] = array('beforejoin'
+            => array(
+                'table' => 'glpi_plugin_simcard_simcards_items',
+                'joinparams' => array('jointype' => 'itemtype_item')
+            ));
+            $reservedTypeIndex++;
+            $sopt[$reservedTypeIndex]['table'] = 'glpi_plugin_simcard_simcards';
+            $sopt[$reservedTypeIndex]['field'] = 'phonenumber';
+            $sopt[$reservedTypeIndex]['name'] = _sn('SIM card', 'SIM cards', 2, 'simcard') . " - " . __s('Phone number', 'simcard');
+            $sopt[$reservedTypeIndex]['massiveaction'] = false;
+            $sopt[$reservedTypeIndex]['forcegroupby'] = true;
+            $sopt[$reservedTypeIndex]['joinparams'] = array('beforejoin'
+            => array(
+                'table' => 'glpi_plugin_simcard_simcards_items',
+                'joinparams' => array('jointype' => 'itemtype_item')
+            ));
+            $reservedTypeIndex++;
+            $sopt[$reservedTypeIndex]['table'] = 'glpi_plugin_simcard_simcards';
+            $sopt[$reservedTypeIndex]['field'] = 'serial';
+            $sopt[$reservedTypeIndex]['name'] = _sn('SIM card', 'SIM cards', 2, 'simcard') . " - " . __s('IMSI', 'simcard');
+            $sopt[$reservedTypeIndex]['massiveaction'] = false;
+            $sopt[$reservedTypeIndex]['forcegroupby'] = true;
+            $sopt[$reservedTypeIndex]['joinparams'] = array('beforejoin'
+            => array(
+                'table' => 'glpi_plugin_simcard_simcards_items',
+                'joinparams' => array('jointype' => 'itemtype_item')
+            ));
+        }
+    }
+    return $sopt;
 }
 
 
 // Hook done on purge item case
 
-function plugin_item_purge_simcard($item) {
+function plugin_item_purge_simcard($item)
+{
 
-   $temp = new PluginSimcardSimcard_Item();
-   $temp->deleteByCriteria(array('itemtype' => get_class($item),
-                                 'items_id' => $item->getField('id')));
-   return true;
+    $temp = new PluginSimcardSimcard_Item();
+    $temp->deleteByCriteria(array(
+        'itemtype' => get_class($item),
+        'items_id' => $item->getField('id')
+    ));
+    return true;
 }
 
-function plugin_datainjection_populate_simcard() {
-   global $INJECTABLE_TYPES;
+function plugin_datainjection_populate_simcard()
+{
+    global $INJECTABLE_TYPES;
 
-   $INJECTABLE_TYPES['PluginSimcardSimcardInjection']      = 'simcard';
+    $INJECTABLE_TYPES['PluginSimcardSimcardInjection'] = 'simcard';
 }
 
 /**
@@ -252,18 +270,19 @@ function plugin_datainjection_populate_simcard() {
  *
  * @since 1.3
  */
-function plugin_simcard_postinit() {
-   global $UNINSTALL_TYPES, $ORDER_TYPES, $ALL_CUSTOMFIELDS_TYPES, $DB;
-   $plugin = new Plugin();
-   if ($plugin->isInstalled('uninstall') && $plugin->isActivated('uninstall')) {
-      array_push($UNINSTALL_TYPES, 'PluginSimcardSimcard');
-   }
-   if ($plugin->isInstalled('order') && $plugin->isActivated('order')) {
-      array_push($ORDER_TYPES, 'PluginSimcardSimcard');
-   }
-   if ($plugin->isInstalled('customfields') && $plugin->isActivated('customfields')) {
-      PluginCustomfieldsItemtype::registerItemtype('PluginSimcardSimcard');
-   }
+function plugin_simcard_postinit()
+{
+    global $UNINSTALL_TYPES, $ORDER_TYPES, $ALL_CUSTOMFIELDS_TYPES, $DB;
+    $plugin = new Plugin();
+    if ($plugin->isInstalled('uninstall') && $plugin->isActivated('uninstall')) {
+        $UNINSTALL_TYPES[] = 'PluginSimcardSimcard';
+    }
+    if ($plugin->isInstalled('order') && $plugin->isActivated('order')) {
+        $ORDER_TYPES[] = 'PluginSimcardSimcard';
+    }
+    if ($plugin->isInstalled('customfields') && $plugin->isActivated('customfields')) {
+        PluginCustomfieldsItemtype::registerItemtype('PluginSimcardSimcard');
+    }
 }
 
 /**
@@ -273,41 +292,41 @@ function plugin_simcard_postinit() {
  *
  * @since 1.4.1
  */
-function plugin_simcard_profileRightUpdate($item) {
-   if ($_SESSION['glpiactiveprofile']['id'] == $item->fields['profiles_id']) {
-      if ($item->fields['name'] == PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD) {
-         $profile = new Profile();
-         $profile->getFromDB($item->fields['profiles_id']);
-         $helpdeskItemTypes = json_decode($profile->fields['helpdesk_item_type'], true);
-         if (!is_array($helpdeskItemTypes)) {
-            $helpdeskItemTypes = array();
-         }
-         $index = array_search('PluginSimcardSimcard', $helpdeskItemTypes);
-         if ($item->fields['rights'] & PluginSimcardProfile::SIMCARD_ASSOCIATE_TICKET) {
-            if ($index === false) {
-               $helpdeskItemTypes[] = 'PluginSimcardSimcard';
-               if ($_SESSION['glpiactiveprofile']['id'] == $profile->fields['id']) {
-                  $_SESSION['glpiactiveprofile']['helpdesk_item_type'][] = 'PluginSimcardSimcard';
-               }
+function plugin_simcard_profileRightUpdate($item)
+{
+    if ($_SESSION['glpiactiveprofile']['id'] == $item->fields['profiles_id']) {
+        if ($item->fields['name'] == PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD) {
+            $profile = new Profile();
+            $profile->getFromDB($item->fields['profiles_id']);
+            $helpdeskItemTypes = json_decode($profile->fields['helpdesk_item_type'], true);
+            if (!is_array($helpdeskItemTypes)) {
+                $helpdeskItemTypes = array();
             }
-         } else {
-            if ($index !== false) {
-               unset($helpdeskItemTypes[$index]);
-               if ($_SESSION['glpiactiveprofile']['id'] == $profile->fields['id']) {
-                  // Just in case this is not the same index in the session vars
-                  $index = array_search('PluginSimcardSimcard', $_SESSION['glpiactiveprofile']['helpdesk_item_type']);
-                  if ($index !== false) {
-                     unset($_SESSION['glpiactiveprofile']['helpdesk_item_type'][$index]);
-                  }
-               }
+            $index = array_search('PluginSimcardSimcard', $helpdeskItemTypes);
+            if ($item->fields['rights'] & PluginSimcardProfile::SIMCARD_ASSOCIATE_TICKET) {
+                if ($index === false) {
+                    $helpdeskItemTypes[] = 'PluginSimcardSimcard';
+                    if ($_SESSION['glpiactiveprofile']['id'] == $profile->fields['id']) {
+                        $_SESSION['glpiactiveprofile']['helpdesk_item_type'][] = 'PluginSimcardSimcard';
+                    }
+                }
+            } else {
+                if ($index !== false) {
+                    unset($helpdeskItemTypes[$index]);
+                    if ($_SESSION['glpiactiveprofile']['id'] == $profile->fields['id']) {
+                        // Just in case this is not the same index in the session vars
+                        $index = array_search('PluginSimcardSimcard', $_SESSION['glpiactiveprofile']['helpdesk_item_type']);
+                        if ($index !== false) {
+                            unset($_SESSION['glpiactiveprofile']['helpdesk_item_type'][$index]);
+                        }
+                    }
+                }
             }
-         }
-         $tmp = array(
-               'id' => $profile->fields['id'],
-               'helpdesk_item_type' => json_encode($helpdeskItemTypes)
-         );
-         $profile->update($tmp, false);
-      }
-   }
+            $tmp = array(
+                'id' => $profile->fields['id'],
+                'helpdesk_item_type' => json_encode($helpdeskItemTypes)
+            );
+            $profile->update($tmp, false);
+        }
+    }
 }
-?>

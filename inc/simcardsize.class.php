@@ -34,15 +34,18 @@ if (!defined('GLPI_ROOT')) {
 }
 
 /// Class SimcardSize
-class PluginSimcardSimcardSize extends CommonDropdown {
+class PluginSimcardSimcardSize extends CommonDropdown
+{
 
 
-   static function getTypeName($nb=0) {
+   static function getTypeName($nb = 0)
+   {
       global $LANG;
       return __s('Size', 'simcard');
    }
 
-   static function install(Migration $migration) {
+   static function install(Migration $migration)
+   {
       global $DB;
       $table = getTableForItemType(__CLASS__);
       if (!$DB->TableExists($table)) {
@@ -53,57 +56,60 @@ class PluginSimcardSimcardSize extends CommonDropdown {
            PRIMARY KEY (`id`),
            KEY `name` (`name`)
          ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-         $DB->query($query) or die ("Error adding table $table");
-         
+         $DB->doQuery($query) or die("Error adding table $table");
+
          $query = "INSERT INTO `$table` (`id`, `name`, `comment`) VALUES
                      (1, 'Full-SIM', ''),
                      (2, 'Micro-SIM', ''),
                      (3, 'Mini-SIM', ''),
                      (4, 'Nano-SIM', '');";
-         $DB->query($query) or die("Error adding simcard sizes");
+         $DB->doQuery($query) or die("Error adding simcard sizes");
       }
    }
-   
+
    /**
     * 
     *
     * @since 1.3
     **/
-   static function upgrade(Migration $migration) {
+   static function upgrade(Migration $migration)
+   {
       global $DB;
       $table = getTableForItemType(__CLASS__);
-      $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
+      $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
    }
-   
-   static function uninstall() {
+
+   static function uninstall()
+   {
       global $DB;
 
       foreach (array('DisplayPreference', 'SavedSearch') as $itemtype) {
          $item = new $itemtype();
          $item->deleteByCriteria(array('itemtype' => __CLASS__));
       }
-      
+
       // Remove dropdowns localization
       $dropdownTranslation = new DropdownTranslation();
       $dropdownTranslation->deleteByCriteria(array("itemtype = 'PluginSimcardSimcardSize'"), 1);
 
       $table = getTableForItemType(__CLASS__);
-      $DB->query("DROP TABLE IF EXISTS `$table`");
+      $DB->doQuery("DROP TABLE IF EXISTS `$table`");
    }
-   
-   static function transfer($ID, $entity) {
+
+   static function transfer($ID, $entity)
+   {
       global $DB;
 
       $simcardSize = new self();
-      
+
       if ($ID > 0) {
          // Not already transfer
          // Search init item
          $query = "SELECT *
-                   FROM `".$simcardSize->getTable()."`
+                   FROM `" . $simcardSize->getTable() . "`
                    WHERE `id` = '$ID'";
 
-         if ($result = $DB->query($query)) {
+         if ($result = $DB->doQuery($query)) {
             if ($DB->numrows($result)) {
                $data                 = $DB->fetch_assoc($result);
                $data                 = Toolbox::addslashes_deep($data);
@@ -122,4 +128,3 @@ class PluginSimcardSimcardSize extends CommonDropdown {
       return 0;
    }
 }
-?>

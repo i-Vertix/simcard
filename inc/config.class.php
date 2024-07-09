@@ -28,8 +28,8 @@
  @link      http://www.glpi-project.org/
  @since     2009
  ---------------------------------------------------------------------- */
- 
- if (!defined('GLPI_ROOT')) {
+
+if (!defined('GLPI_ROOT')) {
    die("Sorry. You can't access directly to this file");
 }
 
@@ -39,13 +39,14 @@
  * @since 1.3
  *
  */
-class PluginSimcardConfig extends CommonDBTM {
+class PluginSimcardConfig extends CommonDBTM
+{
 
    // Type reservation : https://forge.indepnet.net/projects/plugins/wiki/PluginTypesReservation
    // Reserved range   : [10126, 10135]
    const RESERVED_TYPE_RANGE_MIN = 10126;
    const RESERVED_TYPE_RANGE_MAX = 10135;
-   
+
    static $config = array();
 
    /**
@@ -53,61 +54,63 @@ class PluginSimcardConfig extends CommonDBTM {
     *
     * 
     **/
-   static function install(Migration $migration) {
+   static function install(Migration $migration)
+   {
       global $DB;
-      
+
       $table = getTableForItemType(__CLASS__);
-       if (!$DB->TableExists($table)) {
-           $query = "CREATE TABLE `" . $table . "` (
+      if (!$DB->TableExists($table)) {
+         $query = "CREATE TABLE `" . $table . "` (
                 `id` int(11) NOT NULL AUTO_INCREMENT,
                 `type` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
                 `value` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `unicity` (`type`)
                 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1";
-           $DB->query($query) or die($DB->error());
-           $query = "INSERT INTO `" . $table . "` 
+         $DB->doQuery($query) or die($DB->error());
+         $query = "INSERT INTO `" . $table . "` 
                 (`type`,`value`)
                VALUES ('Version', '" . PLUGIN_SIMCARD_VERSION . "')";
-           $DB->query($query) or die($DB->error());
-       }
-      
-   }
-   
-   /**
-    * 
-    *
-    * 
-    **/
-   static function upgrade(Migration $migration) {
-      global $DB;
-      
-      switch (plugin_simcard_currentVersion()) {
-      	default:
-            $table = getTableForItemType(__CLASS__);
-            $query = "UPDATE `".$table."`
-                      SET `value`= '" . PLUGIN_SIMCARD_VERSION . "'
-                      WHERE `type`='Version'";
-            $DB->query($query) or die($DB->error());
-            $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
+         $DB->doQuery($query) or die($DB->error());
       }
    }
-    
+
    /**
     * 
     *
     * 
     **/
-   static function uninstall() {
+   static function upgrade(Migration $migration)
+   {
       global $DB;
-      
+
+      switch (plugin_simcard_currentVersion()) {
+         default:
+            $table = getTableForItemType(__CLASS__);
+            $query = "UPDATE `" . $table . "`
+                      SET `value`= '" . PLUGIN_SIMCARD_VERSION . "'
+                      WHERE `type`='Version'";
+            $DB->doQuery($query) or die($DB->error());
+            $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
+      }
+   }
+
+   /**
+    * 
+    *
+    * 
+    **/
+   static function uninstall()
+   {
+      global $DB;
+
       $displayPreference = new DisplayPreference();
       $displayPreference->deleteByCriteria(array("`num` >= " . self::RESERVED_TYPE_RANGE_MIN . " AND `num` <= " . self::RESERVED_TYPE_RANGE_MAX));
 
       $table = getTableForItemType(__CLASS__);
-      $query = "DROP TABLE IF EXISTS `". $table ."`";
+      $query = "DROP TABLE IF EXISTS `" . $table . "`";
 
-      $DB->query($query) or die($DB->error());
+      $DB->doQuery($query) or die($DB->error());
    }
 
    /**
@@ -115,14 +118,15 @@ class PluginSimcardConfig extends CommonDBTM {
     *
     * 
     **/
-   static function loadCache() {
+   static function loadCache()
+   {
       global $DB;
-   
+
       $table = getTableForItemType(__CLASS__);
       self::$config = array();
-      $query = "SELECT * FROM `". $table ."`";
-      $result = $DB->query($query);
-      while ($data=$DB->fetch_array($result)) {
+      $query = "SELECT * FROM `" . $table . "`";
+      $result = $DB->doQuery($query);
+      while ($data = $DB->fetch_array($result)) {
          self::$config[$data['type']] = $data['value'];
       }
    }
@@ -135,35 +139,39 @@ class PluginSimcardConfig extends CommonDBTM {
     *
     * @return integer the new id of the added item (or FALSE if fail)
     **/
-   function addValue($name, $value) {
+   function addValue($name, $value)
+   {
       $existing_value = $this->getValue($name);
       if (!is_null($existing_value)) {
          return false;
       } else {
-         return $this->add(array('type'       => $name,
-                                 'value'      => $value));
+         return $this->add(array(
+            'type'       => $name,
+            'value'      => $value
+         ));
       }
    }
 
    /**
-   * Get configuration value
-   *
-   * @param $name field name
-   *
-   * @return field value for an existing field, FALSE otherwise
-   **/
-   function getValue($name) {
+    * Get configuration value
+    *
+    * @param $name field name
+    *
+    * @return field value for an existing field, FALSE otherwise
+    **/
+   function getValue($name)
+   {
       if (isset(self::$config[$name])) {
          return self::$config[$name];
       }
 
-      $config = current($this->find("`type`='".$name."'"));
+      $config = current($this->find(["type = '$name'"]));
       if (isset($config['value'])) {
          return $config['value'];
       }
       return NULL;
    }
-   
+
    /**
     * Update configuration value
     *
@@ -172,10 +180,11 @@ class PluginSimcardConfig extends CommonDBTM {
     *
     * @return boolean : TRUE on success
     **/
-   function updateValue($name, $value) {
-      $config = current($this->find("`type`='".$name."'"));
+   function updateValue($name, $value)
+   {
+      $config = current($this->find(["type = '$name'"]));
       if (isset($config['id'])) {
-         return $this->update(array('id'=> $config['id'], 'value'=>$value));
+         return $this->update(array('id' => $config['id'], 'value' => $value));
       } else {
          return $this->add(array('type' => $name, 'value' => $value));
       }

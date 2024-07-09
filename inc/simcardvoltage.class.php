@@ -34,17 +34,20 @@ if (!defined('GLPI_ROOT')) {
 }
 
 /// Class SimcardVoltage
-class PluginSimcardSimcardVoltage extends CommonDropdown {
+class PluginSimcardSimcardVoltage extends CommonDropdown
+{
 
 
-   static function getTypeName($nb=0) {
+   static function getTypeName($nb = 0)
+   {
       global $LANG;
       return __s('Voltage', 'simcard');
    }
 
-   static function install(Migration $migration) {
+   static function install(Migration $migration)
+   {
       global $DB;
-      
+
       $table = getTableForItemType(__CLASS__);
       if (!$DB->TableExists($table)) {
          $query = "CREATE TABLE IF NOT EXISTS `$table` (
@@ -54,43 +57,46 @@ class PluginSimcardSimcardVoltage extends CommonDropdown {
            PRIMARY KEY (`id`),
            KEY `name` (`name`)
          ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-         $DB->query($query) or die ("Error adding table $table");
-         
+         $DB->doQuery($query) or die("Error adding table $table");
+
          $query = "INSERT INTO `$table` (`id`, `name`, `comment`) VALUES
                      (1, '3V', ''),
                      (2, '5V', '');";
-         $DB->query($query) or die("Error adding simcard voltages");
+         $DB->doQuery($query) or die("Error adding simcard voltages");
       }
    }
-   
+
    /**
     * 
     *
     * @since 1.3
     **/
-   static function upgrade(Migration $migration) {
+   static function upgrade(Migration $migration)
+   {
       global $DB;
       $table = getTableForItemType(__CLASS__);
-      $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
+      $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
    }
-   
-   static function uninstall() {
+
+   static function uninstall()
+   {
       global $DB;
 
       foreach (array('DisplayPreference', 'SavedSearch') as $itemtype) {
          $item = new $itemtype();
          $item->deleteByCriteria(array('itemtype' => __CLASS__));
       }
-      
+
       // Remove dropdowns localization
       $dropdownTranslation = new DropdownTranslation();
       $dropdownTranslation->deleteByCriteria(array("itemtype LIKE 'PluginSimcardSimcardVoltage'"), 1);
 
       $table = getTableForItemType(__CLASS__);
-      $DB->query("DROP TABLE IF EXISTS `$table`");
+      $DB->doQuery("DROP TABLE IF EXISTS `$table`");
    }
-   
-   static function transfer($ID, $entity) {
+
+   static function transfer($ID, $entity)
+   {
       global $DB;
 
       $simcardVoltage = new self();
@@ -99,10 +105,10 @@ class PluginSimcardSimcardVoltage extends CommonDropdown {
          // Not already transfer
          // Search init item
          $query = "SELECT *
-                   FROM `".$simcardVoltage->getTable()."`
+                   FROM `" . $simcardVoltage->getTable() . "`
                    WHERE `id` = '$ID'";
 
-         if ($result = $DB->query($query)) {
+         if ($result = $DB->doQuery($query)) {
             if ($DB->numrows($result)) {
                $data                 = $DB->fetch_assoc($result);
                $data                 = Toolbox::addslashes_deep($data);
@@ -120,6 +126,4 @@ class PluginSimcardSimcardVoltage extends CommonDropdown {
       }
       return 0;
    }
-
 }
-?>

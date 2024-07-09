@@ -125,7 +125,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
               KEY `plugin_simcard_simcards_id` (`plugin_simcard_simcards_id`),
               KEY `item` (`itemtype`,`items_id`)
             ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-            $DB->query($query) or die ($DB->error());
+            $DB->doQuery($query) or die ($DB->error());
         }
     }
 
@@ -138,14 +138,14 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
     {
         global $DB;
         $table = getTableForItemType(__CLASS__);
-        $DB->query("ALTER TABLE `$table` ENGINE=InnoDB");
+        $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
     }
 
     static function uninstall()
     {
         global $DB;
         $table = getTableForItemType(__CLASS__);
-        $DB->query("DROP TABLE IF EXISTS `$table`");
+        $DB->doQuery("DROP TABLE IF EXISTS `$table`");
     }
 
     static function showForSimcard(PluginSimcardSimcard $simcard)
