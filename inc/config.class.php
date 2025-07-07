@@ -135,14 +135,14 @@ class PluginSimcardConfig extends CommonDBTM
       }
    }
 
-   /**
-    * Get configuration value
-    *
-    * @param $name field name
-    *
-    * @return field value for an existing field, FALSE otherwise
-    **/
-   public function getValue($name): ?field
+    /**
+     * Get configuration value
+     *
+     * @param $name string field name
+     *
+     * @return string|null field value for an existing field, FALSE otherwise
+     */
+   public function getValue($name): ?string
    {
       if (isset(self::$config[$name])) {
          return self::$config[$name];
