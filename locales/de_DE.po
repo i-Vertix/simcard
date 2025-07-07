@@ -35,7 +35,7 @@ msgstr "Spannung"
 
 #: hook.php:166 inc/simcard.class.php:167 inc/simcardtype.class.php:41
 msgid "Type of SIM card"
-msgstr "SIM-Kart-Typ"
+msgstr "SIM Kartentyp"
 
 #: hook.php:222 inc/simcard.class.php:243 inc/simcard.class.php:443
 msgid "Phone number"

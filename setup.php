@@ -29,7 +29,7 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
-define("PLUGIN_SIMCARD_VERSION", "1.2.0");
+define("PLUGIN_SIMCARD_VERSION", "1.2.1");
 
 // Minimal GLPI version, inclusive
 define("PLUGIN_SIMCARD_GLPI_MIN_VERSION", "10.0");
@@ -83,8 +83,8 @@ function plugin_init_simcard()
             'location_types'         => true
          )
       );
-      array_push($CFG_GLPI['state_types'], 'PluginSimcardSimcard');
-      array_push($CFG_GLPI['globalsearch_types'], 'PluginSimcardSimcard');
+      $CFG_GLPI['state_types'][] = 'PluginSimcardSimcard';
+      $CFG_GLPI['globalsearch_types'][] = 'PluginSimcardSimcard';
 
       //if glpi is loaded
       if (Session::getLoginUserID()) {
@@ -159,9 +159,9 @@ function plugin_simcard_check_config()
  * Migrate itemtype integer (0.72) to string (0.80)
  * 
  * @param array $types
- * @return string
+ * @return array
  */
-function plugin_datainjection_migratetypes_simcard($types)
+function plugin_datainjection_migratetypes_simcard(array $types)
 {
    $types[1300] = 'PluginSimcardsSimcard';
    return $types;

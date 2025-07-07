@@ -32,10 +32,9 @@
 include ('../../../inc/includes.php');
 
 // Affichage du fil d'Ariane
-Html::header(PluginSimcardSimcard::getTypeName(2), '', "assets", "pluginsimcardsimcard", "simcard");
+Html::header(PluginSimcardSimcard::getTypeName(2), $_SERVER['PHP_SELF'], "assets", "pluginsimcardsimcard", "simcard");
 
 $simcard = new PluginSimcardSimcard();
-// TODO Is Checking canCreate useful before showing a list ? 
 if (PluginSimcardSimcard::canView() || PluginSimcardSimcard::canCreate()) {
    Search::show("PluginSimcardSimcard");
 } else {

@@ -60,7 +60,7 @@ class PluginSimcardProfile extends Profile
             + READNOTE
             + UPDATENOTE
       ));
-      $profileRight->updateProfileRights($ID, $firstAccessRights);
+      $profileRight::updateProfileRights($ID, $firstAccessRights);
 
       //Add right to the current session
       $_SESSION['glpiactiveprofile'][self::RIGHT_SIMCARD_SIMCARD] = $firstAccessRights[self::RIGHT_SIMCARD_SIMCARD];
@@ -68,8 +68,19 @@ class PluginSimcardProfile extends Profile
    }
 
    //profiles modification
-   function showForm($ID, $options = array())
-   {
+
+    /**
+     * Print the profile form headers
+     *
+     * @param $ID        int: id of the item to print
+     * @param $options   array of possible options
+     *     - target filename: where to go when done.
+     *     - withtemplate boolean: template or basic item
+     *
+     * @return boolean item found
+     **/
+    public function showForm($ID, array $options = array())
+    {
       global $LANG;
 
       if (!Profile::canView()) {
@@ -99,6 +110,7 @@ class PluginSimcardProfile extends Profile
       }
       Html::closeForm();
       $this->showLegend();
+      return true;
    }
 
    static function install(Migration $migration)

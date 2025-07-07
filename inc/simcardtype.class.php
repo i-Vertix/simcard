@@ -37,25 +37,29 @@ if (!defined('GLPI_ROOT')) {
 class PluginSimcardSimcardType extends CommonDropdown
 {
 
-   static function getTypeName($nb = 0)
+   public static function getTypeName($nb = 0)
    {
       global $LANG;
       return __s('Type of SIM card', 'simcard');
    }
 
-   static function install(Migration $migration)
+   public static function install(Migration $migration)
    {
       global $DB;
+
+       $default_charset = DBConnection::getDefaultCharset();
+       $default_collation = DBConnection::getDefaultCollation();
+       $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
 
       $table = getTableForItemType(__CLASS__);
       if (!$DB->TableExists($table)) {
          $query = "CREATE TABLE IF NOT EXISTS `$table` (
-           `id` int(11) NOT NULL AUTO_INCREMENT,
-           `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-           `comment` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+           `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
+           `name` varchar(255) NOT NULL,
+           `comment` text NOT NULL,
            PRIMARY KEY (`id`),
            KEY `name` (`name`)
-         ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+         ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
          $DB->doQuery($query) or die("Error adding table $table");
       }
    }
@@ -65,14 +69,14 @@ class PluginSimcardSimcardType extends CommonDropdown
     *
     * @since 1.3
     * */
-   static function upgrade(Migration $migration)
+   public static function upgrade(Migration $migration)
    {
       global $DB;
       $table = getTableForItemType(__CLASS__);
       $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
    }
 
-   static function uninstall()
+   public static function uninstall()
    {
       global $DB;
 
@@ -89,7 +93,7 @@ class PluginSimcardSimcardType extends CommonDropdown
       $DB->doQuery("DROP TABLE IF EXISTS `$table`");
    }
 
-   static function transfer($ID, $entity)
+   public static function transfer($ID, $entity)
    {
       global $DB;
 
@@ -99,16 +103,16 @@ class PluginSimcardSimcardType extends CommonDropdown
          // Not already transfer
          // Search init item
          $query = "SELECT *
-                   FROM `" . $simcardType->getTable() . "`
+                   FROM `" . $simcardType::getTable() . "`
                    WHERE `id` = '$ID'";
 
          if ($result = $DB->doQuery($query)) {
             if ($DB->numrows($result)) {
-               $data                 = $DB->fetch_assoc($result);
+               $data                 = $DB->fetchAssoc($result);
                $data                 = Toolbox::addslashes_deep($data);
                $input['name']        = $data['name'];
                $input['entities_id'] = $entity;
-               $newID                = $simcardType->getID($input);
+               $newID                = $simcardType->getID();
 
                if ($newID < 0) {
                   $newID = $simcardType->import($input);

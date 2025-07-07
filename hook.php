@@ -36,7 +36,7 @@
  * Returns 0 if the plugin is not yet installed
  * Returns 1 if the plugin is already installed
  *
- * @return number|string
+ * @return number
  * @since 1.3
  *
  */

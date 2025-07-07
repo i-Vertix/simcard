@@ -41,7 +41,7 @@ class PluginSimcardSimcard extends CommonDBTM
     //static $types = array('');
     public $dohistory = true;
 
-    static $rightname = PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD;
+    public static $rightname = PluginSimcardProfile::RIGHT_SIMCARD_SIMCARD;
     protected $usenotepad = true;
 
     //~ static $types = array('Computer', 'Monitor', 'NetworkEquipment', 'Peripheral', 'Phone', 'Printer', 'Software', 'Entity');
@@ -233,8 +233,8 @@ class PluginSimcardSimcard extends CommonDBTM
         echo "<td>" . __s('User') . "</td>";
         echo "<td>";
         User::dropdown([
-            'name' => 'users_id_tech',
-            'value' => $this->fields["users_id_tech"],
+            'name' => 'users_id',
+            'value' => $this->fields["users_id"],
             'right' => 'own_ticket',
             'entity' => $this->fields["entities_id"],
             'rand' => $randDropdown
@@ -251,8 +251,8 @@ class PluginSimcardSimcard extends CommonDBTM
         echo "<td>" . __s('Group') . "</td>";
         echo "<td>";
         Group::dropdown([
-            'name' => 'groups_id_tech',
-            'value' => $this->fields['groups_id_tech'],
+            'name' => 'groups_id',
+            'value' => $this->fields['groups_id'],
             'entity' => $this->fields['entities_id'],
             'condition' => ['is_assign' => 1],
             'rand' => $randDropdown
@@ -574,39 +574,44 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @param Migration $migration migration helper instance
      */
-    static function install(Migration $migration)
+    public static function install(Migration $migration)
     {
         global $DB;
+
+        $default_charset = DBConnection::getDefaultCharset();
+        $default_collation = DBConnection::getDefaultCollation();
+        $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
+
         $table = getTableForItemType(__CLASS__);
         if (!$DB->TableExists($table)) {
             $query = "CREATE TABLE IF NOT EXISTS `$table` (
-              `id` int(11) NOT NULL AUTO_INCREMENT,
-              `entities_id` int(11) NOT NULL DEFAULT '0',
-              `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `phonenumber` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `serial` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `pin` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `pin2` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `puk` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `puk2` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `otherserial` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-              `states_id` int(11) NOT NULL DEFAULT '0',
-              `locations_id` int(11) NOT NULL DEFAULT '0',
-              `users_id` int(11) NOT NULL DEFAULT '0',
-              `users_id_tech` int(11) NOT NULL DEFAULT '0',
-              `groups_id` int(11) NOT NULL DEFAULT '0',
-              `groups_id_tech` int(11) NOT NULL DEFAULT '0',
-              `plugin_simcard_phoneoperators_id` int(11) NOT NULL DEFAULT '0',
-              `manufacturers_id` int(11) NOT NULL DEFAULT '0',
-              `plugin_simcard_simcardsizes_id` int(11) NOT NULL DEFAULT '0',
-              `plugin_simcard_simcardvoltages_id` int(11) NOT NULL DEFAULT '0',
-              `plugin_simcard_simcardtypes_id` int(11) NOT NULL DEFAULT '0',
-              `comment` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,
-              `date_mod` datetime DEFAULT NULL,
+              `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
+              `entities_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `name` varchar(255) NOT NULL DEFAULT '',
+              `phonenumber` varchar(255) NOT NULL DEFAULT '',
+              `serial` varchar(255) NOT NULL DEFAULT '',
+              `pin` varchar(255) NOT NULL DEFAULT '',
+              `pin2` varchar(255) NOT NULL DEFAULT '',
+              `puk` varchar(255) NOT NULL DEFAULT '',
+              `puk2` varchar(255) NOT NULL DEFAULT '',
+              `otherserial` varchar(255) NOT NULL DEFAULT '',
+              `states_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `locations_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `users_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `users_id_tech` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `groups_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `groups_id_tech` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `plugin_simcard_phoneoperators_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `manufacturers_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `plugin_simcard_simcardsizes_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `plugin_simcard_simcardvoltages_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `plugin_simcard_simcardtypes_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `comment` text NULL,
+              `date_mod` timestamp DEFAULT NULL,
               `is_template` tinyint(1) NOT NULL DEFAULT '0',
               `is_global` tinyint(1) NOT NULL DEFAULT '0',
               `is_deleted` tinyint(1) NOT NULL DEFAULT '0',
-              `template_name` varchar(255) COLLATE utf8_unicode_ci NULL,
+              `template_name` varchar(255) NULL,
               `ticket_tco` decimal(20,4) DEFAULT '0.0000',
               `is_helpdesk_visible` tinyint(1) NOT NULL DEFAULT '1',
               PRIMARY KEY (`id`),
@@ -629,7 +634,7 @@ class PluginSimcardSimcard extends CommonDBTM
               KEY `is_deleted` (`is_deleted`),
               KEY `is_helpdesk_visible` (`is_helpdesk_visible`),
               KEY `is_global` (`is_global`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;";
+            ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
             $DB->doQueryOrDie($query, "Error adding table $table");
         }
         $query = "INSERT INTO `glpi_displaypreferences` (`itemtype`, `num`, `rank`, `users_id`) VALUES 
@@ -644,14 +649,10 @@ class PluginSimcardSimcard extends CommonDBTM
     static function upgrade(Migration $migration)
     {
         global $DB;
-
-        $currentVersion = plugin_simcard_currentVersion();
-        if ($currentVersion === 0) return;
-
         $table = getTableForItemType(__CLASS__);
         $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
 
-        if (version_compare($currentVersion, "1.2.0") === -1) {
+        if (version_compare(plugin_simcard_currentVersion(), "1.2.0") === -1) {
             $displayPreferences = new DisplayPreference();
             $displayPreferences->deleteByCriteria(['itemtype' => __CLASS__]);
             $query = "INSERT INTO `glpi_displaypreferences` (`itemtype`, `num`, `rank`, `users_id`) VALUES 
@@ -763,6 +764,7 @@ class PluginSimcardSimcard extends CommonDBTM
         $menu = array();
         $menu['title'] = self::getTypeName(2);
         $menu['page'] = self::getSearchURL(false);
+        $menu["icon"] = 'fas fa-sim-card';
         $menu['links']['search'] = self::getSearchURL(false);
         if (self::canCreate()) {
             $menu['links']['add'] = '/front/setup.templates.php?itemtype=PluginSimcardSimcard&add=1';

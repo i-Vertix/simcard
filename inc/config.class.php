@@ -47,26 +47,25 @@ class PluginSimcardConfig extends CommonDBTM
    const RESERVED_TYPE_RANGE_MIN = 10126;
    const RESERVED_TYPE_RANGE_MAX = 10135;
 
-   static $config = array();
+   public static array $config = array();
 
-   /**
-    * 
-    *
-    * 
-    **/
-   static function install(Migration $migration)
+   public static function install(Migration $migration): void
    {
-      global $DB;
+       global $DB;
+
+       $default_charset = DBConnection::getDefaultCharset();
+       $default_collation = DBConnection::getDefaultCollation();
+       $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
 
       $table = getTableForItemType(__CLASS__);
-      if (!$DB->TableExists($table)) {
+      if (!$DB->tableExists($table)) {
          $query = "CREATE TABLE `" . $table . "` (
-                `id` int(11) NOT NULL AUTO_INCREMENT,
-                `type` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-                `value` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+                `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
+                `type` varchar(255)  DEFAULT NULL,
+                `value` varchar(255) DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `unicity` (`type`)
-                ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1";
+                ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
          $DB->doQuery($query) or die($DB->error());
          $query = "INSERT INTO `" . $table . "` 
                 (`type`,`value`)
@@ -75,12 +74,7 @@ class PluginSimcardConfig extends CommonDBTM
       }
    }
 
-   /**
-    * 
-    *
-    * 
-    **/
-   static function upgrade(Migration $migration)
+   public static function upgrade(Migration $migration): void
    {
       global $DB;
 
@@ -91,16 +85,10 @@ class PluginSimcardConfig extends CommonDBTM
                       SET `value`= '" . PLUGIN_SIMCARD_VERSION . "'
                       WHERE `type`='Version'";
             $DB->doQuery($query) or die($DB->error());
-            $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
       }
    }
 
-   /**
-    * 
-    *
-    * 
-    **/
-   static function uninstall()
+   public static function uninstall(): void
    {
       global $DB;
 
@@ -113,12 +101,7 @@ class PluginSimcardConfig extends CommonDBTM
       $DB->doQuery($query) or die($DB->error());
    }
 
-   /**
-    * 
-    *
-    * 
-    **/
-   static function loadCache()
+   public static function loadCache(): void
    {
       global $DB;
 
@@ -139,7 +122,7 @@ class PluginSimcardConfig extends CommonDBTM
     *
     * @return integer the new id of the added item (or FALSE if fail)
     **/
-   function addValue($name, $value)
+   public function addValue($name, $value): false|int
    {
       $existing_value = $this->getValue($name);
       if (!is_null($existing_value)) {
@@ -159,7 +142,7 @@ class PluginSimcardConfig extends CommonDBTM
     *
     * @return field value for an existing field, FALSE otherwise
     **/
-   function getValue($name)
+   public function getValue($name): ?field
    {
       if (isset(self::$config[$name])) {
          return self::$config[$name];
@@ -180,7 +163,7 @@ class PluginSimcardConfig extends CommonDBTM
     *
     * @return boolean : TRUE on success
     **/
-   function updateValue($name, $value)
+   public function updateValue($name, $value): bool
    {
       $config = current($this->find(["type = '$name'"]));
       if (isset($config['id'])) {

@@ -58,13 +58,13 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
      *
      * @param $nb  integer  number of item in the type (default 0)
      **/
-    static function getTypeName($nb = 0)
+    public static function getTypeName($nb = 0)
     {
         global $LANG;
         return __s('Direct Connections');
     }
 
-    static function countForItem(CommonDBTM $item)
+    public static function countForItem(CommonDBTM $item)
     {
         return countElementsInTable(getTableForItemType(__CLASS__), ["WHERE" => ["plugin_simcard_simcards_id" => $item->getField('id')]]);
     }
@@ -75,7 +75,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
      * @param CommonDBTM $item Item whose relations to simcards shall be counted
      * @return integer count of relations between the item and simcards
      */
-    static function countForItemByItemtype(CommonDBTM $item)
+    public static function countForItemByItemtype(CommonDBTM $item)
     {
         $id = $item->getField('id');
         $itemtype = $item->getType();
@@ -86,7 +86,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
     /**
      * Hook called After an item is uninstall or purge
      */
-    static function cleanForItem(CommonDBTM $item)
+    public static function cleanForItem(CommonDBTM $item)
     {
         $temp = new self();
         $temp->deleteByCriteria(
@@ -94,7 +94,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
                 'items_id' => $item->getField('id')));
     }
 
-    static function getClasses()
+    public static function getClasses()
     {
         return self::$linkableClasses;
     }
@@ -102,53 +102,53 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
     /**
      * Declare a new itemtype to be linkable to a simcard
      */
-    static function registerItemtype($itemtype)
+    public static function registerItemtype($itemtype)
     {
         if (!in_array($itemtype, self::$linkableClasses)) {
-            array_push(self::$linkableClasses, $itemtype);
+            self::$linkableClasses[] = $itemtype;
             Plugin::registerClass('PluginSimcardSimcard_Item',
                 array('addtabon' => $itemtype));
         }
     }
 
-    static function install(Migration $migration)
+    public static function install(Migration $migration)
     {
         global $DB;
+
+        $default_charset = DBConnection::getDefaultCharset();
+        $default_collation = DBConnection::getDefaultCollation();
+        $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
+
         $table = getTableForItemType(__CLASS__);
         if (!$DB->TableExists($table)) {
             $query = "CREATE TABLE IF NOT EXISTS `$table` (
-              `id` int(11) NOT NULL AUTO_INCREMENT,
-              `items_id` int(11) NOT NULL DEFAULT '0' COMMENT 'RELATION to various table, according to itemtype (id)',
-              `plugin_simcard_simcards_id` int(11) NOT NULL DEFAULT '0',
-              `itemtype` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+              `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
+              `items_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `plugin_simcard_simcards_id` int {$default_key_sign} NOT NULL DEFAULT '0',
+              `itemtype` varchar(100) NOT NULL,
               PRIMARY KEY (`id`),
               KEY `plugin_simcard_simcards_id` (`plugin_simcard_simcards_id`),
               KEY `item` (`itemtype`,`items_id`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+            ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
             $DB->doQuery($query) or die ($DB->error());
         }
     }
 
-    /**
-     *
-     *
-     * @since 1.3
-     **/
-    static function upgrade(Migration $migration)
+    public static function upgrade(Migration $migration)
     {
         global $DB;
         $table = getTableForItemType(__CLASS__);
         $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
     }
 
-    static function uninstall()
+    public static function uninstall()
     {
         global $DB;
         $table = getTableForItemType(__CLASS__);
         $DB->doQuery("DROP TABLE IF EXISTS `$table`");
     }
 
-    static function showForSimcard(PluginSimcardSimcard $simcard)
+    public static function showForSimcard(PluginSimcardSimcard $simcard)
     {
         global $DB, $LANG;
 
@@ -265,7 +265,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
 
     }
 
-    static function showForItem(CommonDBTM $item)
+    public static function showForItem(CommonDBTM $item)
     {
         global $DB, $LANG;
 
@@ -381,7 +381,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
         echo "</div>";
     }
 
-    function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         global $CFG_GLPI;
 
@@ -410,14 +410,14 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
      *
      * @param $item   Simcard object
      **/
-    static function countForSimcard(PluginSimcardSimcard $item)
+    public static function countForSimcard(PluginSimcardSimcard $item)
     {
 
         $restrict = ["WHERE" => ["plugin_simcard_simcards_id" => $item->getField('id')]];
         return countElementsInTable(array('glpi_plugin_simcard_simcards_items'), $restrict);
     }
 
-    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
 
         if (in_array(get_class($item), PluginSimcardSimcard_Item::getClasses())) {
@@ -428,5 +428,3 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
         return true;
     }
 }
-
-?>
