@@ -30,7 +30,7 @@
  ---------------------------------------------------------------------- */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
 /// Class SimcardVoltage
@@ -38,96 +38,96 @@ class PluginSimcardSimcardVoltage extends CommonDropdown
 {
 
 
-   public static function getTypeName($nb = 0)
-   {
-      global $LANG;
-      return __s('Voltage', 'simcard');
-   }
+    public static function getTypeName($nb = 0)
+    {
+        global $LANG;
+        return __s('Voltage', 'simcard');
+    }
 
-   public static function install(Migration $migration)
-   {
-      global $DB;
+    public static function install(Migration $migration)
+    {
+        global $DB;
 
-       $default_charset = DBConnection::getDefaultCharset();
-       $default_collation = DBConnection::getDefaultCollation();
-       $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
+        $default_charset = DBConnection::getDefaultCharset();
+        $default_collation = DBConnection::getDefaultCollation();
+        $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
 
-      $table = getTableForItemType(__CLASS__);
-      if (!$DB->TableExists($table)) {
-         $query = "CREATE TABLE IF NOT EXISTS `$table` (
+        $table = getTableForItemType(__CLASS__);
+        if (!$DB->TableExists($table)) {
+            $query = "CREATE TABLE IF NOT EXISTS `$table` (
            `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
            `name` varchar(255) NOT NULL,
            `comment` text NOT NULL,
            PRIMARY KEY (`id`),
            KEY `name` (`name`)
          ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-         $DB->doQuery($query) or die("Error adding table $table");
+            $DB->doQuery($query);
 
-         $query = "INSERT INTO `$table` (`id`, `name`, `comment`) VALUES
+            $query = "INSERT INTO `$table` (`id`, `name`, `comment`) VALUES
                      (1, '3V', ''),
                      (2, '5V', '');";
-         $DB->doQuery($query) or die("Error adding simcard voltages");
-      }
-   }
+            $DB->doQuery($query);
+        }
+    }
 
-   /**
-    * 
-    *
-    * @since 1.3
-    **/
-   public static function upgrade(Migration $migration)
-   {
-      global $DB;
-      $table = getTableForItemType(__CLASS__);
-      $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
-   }
+    /**
+     *
+     *
+     * @since 1.3
+     **/
+    public static function upgrade(Migration $migration)
+    {
+        global $DB;
+        $table = getTableForItemType(__CLASS__);
+        $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
+    }
 
-   public static function uninstall()
-   {
-      global $DB;
+    public static function uninstall()
+    {
+        global $DB;
 
-      foreach (array('DisplayPreference', 'SavedSearch') as $itemtype) {
-         $item = new $itemtype();
-         $item->deleteByCriteria(array('itemtype' => __CLASS__));
-      }
+        foreach (array('DisplayPreference', 'SavedSearch') as $itemtype) {
+            $item = new $itemtype();
+            $item->deleteByCriteria(array('itemtype' => __CLASS__));
+        }
 
-      // Remove dropdowns localization
-      $dropdownTranslation = new DropdownTranslation();
-      $dropdownTranslation->deleteByCriteria(array("itemtype LIKE 'PluginSimcardSimcardVoltage'"), 1);
+        // Remove dropdowns localization
+        $dropdownTranslation = new DropdownTranslation();
+        $dropdownTranslation->deleteByCriteria(["itemtype" => 'PluginSimcardSimcardVoltage'], true, false);
 
-      $table = getTableForItemType(__CLASS__);
-      $DB->doQuery("DROP TABLE IF EXISTS `$table`");
-   }
+        $table = getTableForItemType(__CLASS__);
+        $DB->doQuery("DROP TABLE IF EXISTS `$table`");
+    }
 
-   public static function transfer($ID, $entity)
-   {
-      global $DB;
+    public static function transfer($ID, $entity)
+    {
+        global $DB;
 
-      $simcardVoltage = new self();
+        $simcardVoltage = new self();
 
-      if ($ID > 0) {
-         // Not already transfer
-         // Search init item
-         $query = "SELECT *
+        if ($ID > 0) {
+            // Not already transfer
+            // Search init item
+            $query = "SELECT *
                    FROM `" . $simcardVoltage->getTable() . "`
                    WHERE `id` = '$ID'";
 
-         if ($result = $DB->doQuery($query)) {
-            if ($DB->numrows($result)) {
-               $data                 = $DB->fetchAssoc($result);
-               $data                 = Toolbox::addslashes_deep($data);
-               $input['name']        = $data['name'];
-               $input['entities_id'] = $entity;
-               $newID                = $simcardVoltage->getID();
+            if ($result = $DB->doQuery($query)) {
+                if ($DB->numrows($result)) {
+                    $data = $DB->fetchAssoc($result);
+                    $data = Toolbox::addslashes_deep($data);
+                    $input['name'] = $data['name'];
+                    $input['entities_id'] = $entity;
+                    $newID = $simcardVoltage->getID();
 
-               if ($newID < 0) {
-                  $newID = $simcardVoltage->import($input);
-               }
+                    if ($newID < 0) {
+                        $newID = $simcardVoltage->import($input);
+                    }
 
-               return $newID;
+                    return $newID;
+                }
             }
-         }
-      }
-      return 0;
-   }
+        }
+        return 0;
+    }
 }

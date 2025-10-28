@@ -60,7 +60,7 @@ class PluginSimcardSimcardType extends CommonDropdown
            PRIMARY KEY (`id`),
            KEY `name` (`name`)
          ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-         $DB->doQuery($query) or die("Error adding table $table");
+         $DB->doQuery($query);
       }
    }
 
@@ -87,7 +87,7 @@ class PluginSimcardSimcardType extends CommonDropdown
 
       // Remove dropdowns localization
       $dropdownTranslation = new DropdownTranslation();
-      $dropdownTranslation->deleteByCriteria(array("itemtype = 'PluginSimcardSimcardType'"), 1);
+      $dropdownTranslation->deleteByCriteria(["itemtype" => 'PluginSimcardSimcardType'], true, false);
 
       $table = getTableForItemType(__CLASS__);
       $DB->doQuery("DROP TABLE IF EXISTS `$table`");

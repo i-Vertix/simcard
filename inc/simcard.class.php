@@ -52,7 +52,7 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @param $nb  integer  number of item in the type (default 0)
      **/
-    static function getTypeName($nb = 0)
+    public static function getTypeName($nb = 0)
     {
         global $LANG;
         return _n('SIM card', 'SIM cards', $nb, 'simcard');
@@ -63,7 +63,7 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @see commonDBTM::getRights()
      **/
-    function getRights($interface = 'central')
+    public function getRights($interface = 'central')
     {
         $rights = parent::getRights();
         $rights[PluginSimcardProfile::SIMCARD_ASSOCIATE_TICKET] = __('Associable to a ticket');
@@ -71,7 +71,7 @@ class PluginSimcardSimcard extends CommonDBTM
         return $rights;
     }
 
-    function defineTabs($options = array())
+    public function defineTabs($options = array())
     {
         global $LANG;
         $ong = array();
@@ -84,7 +84,7 @@ class PluginSimcardSimcard extends CommonDBTM
                 $this->addStandardTab('Infocom', $ong, $options);
                 $this->addStandardTab('Contract_Item', $ong, $options);
                 if ($this->fields['is_helpdesk_visible'] == 1) {
-                    $this->addStandardTab('Ticket', $ong, $options);
+                    $this->addStandardTab('Item_Ticket', $ong, $options);
                     $this->addStandardTab('Item_Problem', $ong, $options);
                 }
                 $this->addStandardTab('Notepad', $ong, $options);
@@ -112,15 +112,15 @@ class PluginSimcardSimcard extends CommonDBTM
      *     - target for the Form
      *     - withtemplate template or basic simcard
      *
-     * @return Nothing (display)
+     * @return boolean (display)
      **/
-    function showForm($ID, $options = array())
+    public function showForm($ID, $options = array())
     {
         global $CFG_GLPI, $DB, $LANG;
 
-        if (!$this->canView()) return false;
+        if (!self::canView()) return false;
 
-        $target = $this->getFormURL();
+        $target = self::getFormURL();
         $withtemplate = '';
 
         if (isset($options['target'])) {
@@ -311,7 +311,7 @@ class PluginSimcardSimcard extends CommonDBTM
         return true;
     }
 
-    function prepareInputForAdd($input)
+    public function prepareInputForAdd($input)
     {
 
         if (isset($input["id"]) && $input["id"] > 0) {
@@ -323,16 +323,16 @@ class PluginSimcardSimcard extends CommonDBTM
         return $input;
     }
 
-    function post_addItem()
+    public function post_addItem()
     {
         global $DB, $CFG_GLPI;
 
         // Manage add from template
-        if (isset($this->input["_oldID"])) {
-            Infocom::cloneItem($this->getType(), $this->input["_oldID"], $this->fields['id']);
-            Contract_Item::cloneItem($this->getType(), $this->input["_oldID"], $this->fields['id']);
-            Document_Item::cloneItem($this->getType(), $this->input["_oldID"], $this->fields['id']);
-        }
+//        if (isset($this->input["_oldID"])) {
+//            Infocom::cloneItem(self::getType(), $this->input["_oldID"], $this->fields['id']);
+//            Contract_Item::cloneItem(self::getType(), $this->input["_oldID"], $this->fields['id']);
+//            Document_Item::cloneItem(self::getType(), $this->input["_oldID"], $this->fields['id']);
+//        }
 
         if (isset($this->input['_itemtype']) && isset($this->input['_items_id'])) {
             $simcard_item = new PluginSimcardSimcard_Item();
@@ -343,7 +343,7 @@ class PluginSimcardSimcard extends CommonDBTM
         }
     }
 
-    function rawSearchOptions()
+    public function rawSearchOptions()
     {
         global $CFG_GLPI, $LANG;
 
@@ -356,7 +356,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '1',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'name',
             'name' => __('Name'),
             'datatype' => 'itemlink',
@@ -365,7 +365,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '2',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'id',
             'name' => __('ID'),
             'datatype' => 'number',
@@ -383,7 +383,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '404',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'serial',
             'name' => __('IMSI', 'simcard'),
             'datatype' => 'text',
@@ -392,7 +392,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '405',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'otherserial',
             'name' => __('Inventory number'),
             'datatype' => 'text',
@@ -401,7 +401,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '406',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'comment',
             'name' => __('Comments'),
             'datatype' => 'text'
@@ -418,7 +418,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '407',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'date_mod',
             'name' => __('Last update'),
             'datatype' => 'datetime',
@@ -464,7 +464,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '412',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'phonenumber',
             'name' => __('Phone number', 'simcard'),
             'datatype' => 'string',
@@ -474,7 +474,7 @@ class PluginSimcardSimcard extends CommonDBTM
         if (PluginSimcardSimcard::canUpdate()) {
             $tab[] = [
                 'id' => '413',
-                'table' => $this->getTable(),
+                'table' => self::getTable(),
                 'field' => 'pin',
                 'name' => __('Pin 1', 'simcard'),
                 'datatype' => 'string',
@@ -483,7 +483,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
             $tab[] = [
                 'id' => '414',
-                'table' => $this->getTable(),
+                'table' => self::getTable(),
                 'field' => 'puk',
                 'name' => __('Puk 1', 'simcard'),
                 'datatype' => 'string',
@@ -492,7 +492,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
             $tab[] = [
                 'id' => '415',
-                'table' => $this->getTable(),
+                'table' => self::getTable(),
                 'field' => 'pin2',
                 'name' => __('Pin 2', 'simcard'),
                 'datatype' => 'string',
@@ -501,7 +501,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
             $tab[] = [
                 'id' => '416',
-                'table' => $this->getTable(),
+                'table' => self::getTable(),
                 'field' => 'puk2',
                 'name' => __('Puk 2', 'simcard'),
                 'datatype' => 'string',
@@ -555,7 +555,7 @@ class PluginSimcardSimcard extends CommonDBTM
 
         $tab[] = [
             'id' => '90',
-            'table' => $this->getTable(),
+            'table' => self::getTable(),
             'field' => 'notepad',
             'name' => __('Notes'),
             'linkfield' => 'notepad',
@@ -635,37 +635,24 @@ class PluginSimcardSimcard extends CommonDBTM
               KEY `is_helpdesk_visible` (`is_helpdesk_visible`),
               KEY `is_global` (`is_global`)
             ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-            $DB->doQueryOrDie($query, "Error adding table $table");
+            $DB->doQuery($query);
         }
-        $query = "INSERT INTO `glpi_displaypreferences` (`itemtype`, `num`, `rank`, `users_id`) VALUES 
-            ('PluginSimcardSimcard', 1, 1, 0),
-            ('PluginSimcardSimcard', 412, 2, 0),
-            ('PluginSimcardSimcard', 80, 2, 0),
-            ('PluginSimcardSimcard', 411, 2, 0),
-            ('PluginSimcardSimcard', 410, 2, 0);";
-        $DB->doQueryOrDie($query, "Error while setting global displaypreferences");
+        $migration->updateDisplayPrefs([
+            "PluginSimcardSimcard" => [1, 412, 80, 411, 410]
+        ], [], true);
     }
 
-    static function upgrade(Migration $migration)
+    public static function upgrade(Migration $migration)
     {
         global $DB;
         $table = getTableForItemType(__CLASS__);
         $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
-
-        if (version_compare(plugin_simcard_currentVersion(), "1.2.0") === -1) {
-            $displayPreferences = new DisplayPreference();
-            $displayPreferences->deleteByCriteria(['itemtype' => __CLASS__]);
-            $query = "INSERT INTO `glpi_displaypreferences` (`itemtype`, `num`, `rank`, `users_id`) VALUES 
-            ('PluginSimcardSimcard', 1, 1, 0),
-            ('PluginSimcardSimcard', 412, 2, 0),
-            ('PluginSimcardSimcard', 80, 2, 0),
-            ('PluginSimcardSimcard', 411, 2, 0),
-            ('PluginSimcardSimcard', 410, 2, 0);";
-            $DB->doQueryOrDie($query, "Error while setting global displaypreferences");
-        }
+//        $migration->updateDisplayPrefs([
+//            "PluginSimcardSimcard" => [1, 412, 80, 411, 410]
+//        ], [], true);
     }
 
-    static function uninstall()
+    public static function uninstall()
     {
         global $DB;
 
@@ -682,21 +669,17 @@ class PluginSimcardSimcard extends CommonDBTM
             PluginDatainjectionModel::clean(array('itemtype' => __CLASS__));
         }
 
-        if ($plugin->isInstalled('customfields') && $plugin->isActivated('customfields')) {
-            PluginCustomfieldsItemtype::unregisterItemtype('PluginSimcardSimcard');
-        }
-
         $table = getTableForItemType(__CLASS__);
         $DB->doQuery("DROP TABLE IF EXISTS `$table`");
     }
 
-    function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         global $LANG;
 
         if (
             in_array(get_class($item), PluginSimcardSimcard_Item::getClasses())
-            || get_class($item) == 'Profile'
+            || get_class($item) === 'Profile'
         ) {
             return array(1 => _sn('SIM card', 'SIM cards', 2, 'simcard'));
         } elseif (get_class($item) == __CLASS__) {
@@ -712,12 +695,12 @@ class PluginSimcardSimcard extends CommonDBTM
      * @param number $tabnum
      * @param number $withtemplate
      */
-    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
 
         $self = new self();
-        if ($item->getType() == 'PluginSimcardSimcard') {
-            $self->showtotal($item->getField('id'));
+        if ($item->getType() === 'PluginSimcardSimcard') {
+            $self->showForm($item->getField('id'));
         }
         return true;
     }
@@ -729,7 +712,7 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @return array of types
      **/
-    static function getTypes($all = false)
+    public static function getTypes($all = false)
     {
 
         if ($all) {
@@ -752,19 +735,25 @@ class PluginSimcardSimcard extends CommonDBTM
         return $types;
     }
 
+    public static function getIcon()
+    {
+        return "ti ti-device-sim";
+    }
+
     /**
      * Add menu entries the plugin needs to show
      *
      * @return array
      */
-    static function getMenuContent()
+    public static function getMenuContent()
     {
         global $CFG_GLPI;
 
         $menu = array();
         $menu['title'] = self::getTypeName(2);
         $menu['page'] = self::getSearchURL(false);
-        $menu["icon"] = 'fas fa-sim-card';
+        $menu["icon"] = self::getIcon();
+//        $menu["icon"] = 'fas fa-sim-card';
         $menu['links']['search'] = self::getSearchURL(false);
         if (self::canCreate()) {
             $menu['links']['add'] = '/front/setup.templates.php?itemtype=PluginSimcardSimcard&add=1';
@@ -777,12 +766,12 @@ class PluginSimcardSimcard extends CommonDBTM
     /**
      * Actions done when item is deleted from the database
      *
-     * @return nothing
+     * @return void
      * */
-    function cleanDBonPurge()
+    public function cleanDBonPurge()
     {
         $link = new PluginSimcardSimcard_Item();
-        $link->cleanDBonItemDelete($this->getType(), $this->getID());
+        $link->cleanDBonItemDelete(self::getType(), $this->getID());
     }
 
     /**
@@ -796,11 +785,11 @@ class PluginSimcardSimcard extends CommonDBTM
      **@see CommonDBTM::delete()
      *
      */
-    function delete(array $input, $force = 0, $history = 1)
+    public function delete(array $input, $force = false, $history = 1)
     {
         $deleteSuccessful = parent::delete($input, $force, $history);
-        if ($deleteSuccessful != false) {
-            if ($force == 1) {
+        if ($deleteSuccessful) {
+            if ($force) {
                 $notepad = new Notepad();
                 $notepad->deleteByCriteria(array(
                     'itemtype' => 'PluginSimcardSimcard',
@@ -816,12 +805,12 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @see CommonDBTM::getSpecificMassiveActions()
      * */
-    function getSpecificMassiveActions($checkitem = NULL)
+    public function getSpecificMassiveActions($checkitem = NULL)
     {
         $isadmin = static::canUpdate();
         $actions = parent::getSpecificMassiveActions($checkitem);
 
-        if ($_SESSION['glpiactiveprofile']['interface'] == 'central') {
+        if ($_SESSION['glpiactiveprofile']['interface'] === 'central') {
             if ($isadmin) {
                 if (Session::haveRight('transfer', READ) && Session::isMultiEntitiesMode()) {
                     $actions['PluginSimcardSimcard' . MassiveAction::CLASS_ACTION_SEPARATOR . 'transfer'] = __('Transfer');
@@ -836,7 +825,7 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @see CommonDBTM::showMassiveActionsSubForm()
      * */
-    static function showMassiveActionsSubForm(MassiveAction $ma)
+    public static function showMassiveActionsSubForm(MassiveAction $ma)
     {
 
         switch ($ma->getAction()) {
@@ -844,7 +833,6 @@ class PluginSimcardSimcard extends CommonDBTM
                 Dropdown::show('Entity');
                 echo Html::submit(_x('button', 'Post'), array('name' => 'massiveaction'));
                 return true;
-                break;
         }
         return parent::showMassiveActionsSubForm($ma);
     }
@@ -854,14 +842,14 @@ class PluginSimcardSimcard extends CommonDBTM
      *
      * @see CommonDBTM::processMassiveActionsForOneItemtype()
      * */
-    static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids)
+    public static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids)
     {
         global $DB;
 
         switch ($ma->getAction()) {
             case "transfer":
                 $input = $ma->getInput();
-                if ($item->getType() == 'PluginSimcardSimcard') {
+                if ($item->getType() === 'PluginSimcardSimcard') {
                     foreach ($ids as $key) {
                         // Types
                         $item->getFromDB($key);

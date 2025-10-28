@@ -30,44 +30,44 @@
  ---------------------------------------------------------------------- */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
 class PluginSimcardProfile extends Profile
 {
 
-   const RIGHT_SIMCARD_SIMCARD = "simcard:simcard";
-   const SIMCARD_ASSOCIATE_TICKET = 128;
+    const RIGHT_SIMCARD_SIMCARD = "simcard:simcard";
+    const SIMCARD_ASSOCIATE_TICKET = 128;
 
-   static $rightname = 'profile';
+    public static $rightname = 'profile';
 
-   function createAccess($ID)
-   {
-      $this->add(array('profiles_id' => $ID));
-   }
+    public function createAccess($ID)
+    {
+        $this->add(array('profiles_id' => $ID));
+    }
 
-   static function createFirstAccess($ID)
-   {
-      $profileRight = new ProfileRight();
+    public static function createFirstAccess($ID)
+    {
+        $profileRight = new ProfileRight();
 
-      $currentRights = ProfileRight::getProfileRights(
-         $ID,
-         array(self::RIGHT_SIMCARD_SIMCARD)
-      );
-      $firstAccessRights = array_merge($currentRights, array(
-         self::RIGHT_SIMCARD_SIMCARD => ALLSTANDARDRIGHT
-            + self::SIMCARD_ASSOCIATE_TICKET
-            + READNOTE
-            + UPDATENOTE
-      ));
-      $profileRight::updateProfileRights($ID, $firstAccessRights);
+        $currentRights = ProfileRight::getProfileRights(
+            $ID,
+            array(self::RIGHT_SIMCARD_SIMCARD)
+        );
+        $firstAccessRights = array_merge($currentRights, array(
+            self::RIGHT_SIMCARD_SIMCARD => ALLSTANDARDRIGHT
+                + self::SIMCARD_ASSOCIATE_TICKET
+                + READNOTE
+                + UPDATENOTE
+        ));
+        $profileRight::updateProfileRights($ID, $firstAccessRights);
 
-      //Add right to the current session
-      $_SESSION['glpiactiveprofile'][self::RIGHT_SIMCARD_SIMCARD] = $firstAccessRights[self::RIGHT_SIMCARD_SIMCARD];
-      $_SESSION['glpiactiveprofile']['helpdesk_item_type'][] = 'PluginSimcardSimcard';
-   }
+        //Add right to the current session
+        $_SESSION['glpiactiveprofile'][self::RIGHT_SIMCARD_SIMCARD] = $firstAccessRights[self::RIGHT_SIMCARD_SIMCARD];
+        $_SESSION['glpiactiveprofile']['helpdesk_item_type'][] = 'PluginSimcardSimcard';
+    }
 
-   //profiles modification
+    //profiles modification
 
     /**
      * Print the profile form headers
@@ -81,120 +81,124 @@ class PluginSimcardProfile extends Profile
      **/
     public function showForm($ID, array $options = array())
     {
-      global $LANG;
+        global $LANG;
 
-      if (!Profile::canView()) {
-         return false;
-      }
-      $canedit = self::canUpdate();
-      $profile    = new Profile();
-      if ($ID) {
-         //$this->getFromDBByProfile($ID);
-         $profile->getFromDB($ID);
-      }
-      if ($canedit) {
-         echo "<form action='" . $profile->getFormURL() . "' method='post'>";
-      }
+        if (!Profile::canView()) {
+            return false;
+        }
+        $canedit = self::canUpdate();
+        $profile = new Profile();
+        if ($ID) {
+            //$this->getFromDBByProfile($ID);
+            $profile->getFromDB($ID);
+        }
+        if ($canedit) {
+            echo "<form action='" . $profile->getFormURL() . "' method='post'>";
+        }
 
-      $rights = $this->getAllRights();
-      $profile->displayRightsChoiceMatrix($rights, array(
-         'canedit'       => $canedit,
-         'default_class' => 'tab_bg_2'
-      ));
+        $rights = $this->getAllRights();
+        $profile->displayRightsChoiceMatrix($rights, array(
+            'canedit' => $canedit,
+            'default_class' => 'tab_bg_2'
+        ));
 
-      if ($canedit) {
-         echo "<div class='center'>";
-         echo "<input type='hidden' name='id' value=" . $ID . ">";
-         echo "<input type='submit' name='update' value=\"" . _sx('button', 'Save') . "\" class='submit'>";
-         echo "</div>";
-      }
-      Html::closeForm();
-      $this->showLegend();
-      return true;
-   }
+        if ($canedit) {
+            echo "<div class='center'>";
+            echo "<input type='hidden' name='id' value=" . $ID . ">";
+            echo "<input type='submit' name='update' value=\"" . _sx('button', 'Save') . "\" class='submit'>";
+            echo "</div>";
+        }
+        Html::closeForm();
+        $this->showLegend();
+        return true;
+    }
 
-   static function install(Migration $migration)
-   {
-      global $DB;
+    public static function install(Migration $migration)
+    {
+        global $DB;
 
-      // Table no longer needed in GLPI 0.85+; drop it. Needed for upgrades
-      $migration->dropTable(getTableForItemType(__CLASS__));
-      PluginSimcardProfile::createFirstAccess($_SESSION['glpiactiveprofile']['id']);
-   }
+        // Table no longer needed in GLPI 0.85+; drop it. Needed for upgrades
+        $migration->dropTable(getTableForItemType(__CLASS__));
+        PluginSimcardProfile::createFirstAccess($_SESSION['glpiactiveprofile']['id']);
+    }
 
-   /**
-    * 
-    *
-    * @since 1.3
-    **/
-   static function upgrade(Migration $migration)
-   {
-      global $DB;
-   }
+    /**
+     *
+     *
+     * @since 1.3
+     **/
+    public static function upgrade(Migration $migration)
+    {
+        global $DB;
+    }
 
-   /**
-    * Init profiles
-    *
-    **/
+    /**
+     * Init profiles
+     *
+     **/
 
-   static function translateARight($old_right)
-   {
-      switch ($old_right) {
-         case 'r':
-            return READ;
+    public static function translateARight($old_right)
+    {
+        switch ($old_right) {
+            case 'r':
+                return READ;
 
-         case 'w':
-            return ALLSTANDARDRIGHT;
+            case 'w':
+                return ALLSTANDARDRIGHT;
 
-         case '1':
-            return self::SIMCARD_ASSOCIATE_TICKET;
+            case '1':
+                return self::SIMCARD_ASSOCIATE_TICKET;
 
-         case '0':
-         case '':
-         default:
-            return 0;
-      }
-   }
+            case '0':
+            case '':
+            default:
+                return 0;
+        }
+    }
 
-   static function uninstall()
-   {
-      global $DB;
+    public static function uninstall()
+    {
+        global $DB;
 
-      ProfileRight::deleteProfileRights(array(
-         self::RIGHT_SIMCARD_SIMCARD
-      ));
-      unset($_SESSION["glpiactiveprofile"][self::RIGHT_SIMCARD_SIMCARD]);
-   }
+        ProfileRight::deleteProfileRights(array(
+            self::RIGHT_SIMCARD_SIMCARD
+        ));
+        unset($_SESSION["glpiactiveprofile"][self::RIGHT_SIMCARD_SIMCARD]);
+    }
 
-   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
-   {
-      global $LANG;
-      if ($item->getType() == 'Profile') {
-         return _sn('SIM card', 'SIM cards', 2, 'simcard');
-      }
-      return '';
-   }
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    {
+        global $LANG;
+        if ($item->getType() == 'Profile') {
+            return self::createTabEntry(_sn('SIM card', 'SIM cards', 2, 'simcard'));
+        }
+        return '';
+    }
 
+    public static function getIcon()
+    {
+        return PluginSimcardSimcard::getIcon();
+    }
 
-   static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
-   {
+    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
 
-      if ($item->getType() == 'Profile') {
-         $profile = new self();
-         $profile->showForm($item->getField('id'));
-      }
-      return true;
-   }
+        if ($item->getType() == 'Profile') {
+            $profile = new self();
+            $profile->showForm($item->getField('id'));
+        }
+        return true;
+    }
 
-   function getAllRights()
-   {
-      $rights = array(
-         array(
-            'itemtype'  => 'PluginSimcardSimcard',
-            'label'     => PluginSimcardSimcard::getTypeName(2),
-            'field'     => 'simcard:simcard'
-         ),
-      );
-      return $rights;
-   }
+    public function getAllRights()
+    {
+        $rights = array(
+            array(
+                'itemtype' => 'PluginSimcardSimcard',
+                'label' => PluginSimcardSimcard::getTypeName(2),
+                'field' => 'simcard:simcard'
+            ),
+        );
+        return $rights;
+    }
 }
