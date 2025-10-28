@@ -130,7 +130,7 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
               KEY `plugin_simcard_simcards_id` (`plugin_simcard_simcards_id`),
               KEY `item` (`itemtype`,`items_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-            $DB->doQuery($query) or die ($DB->error());
+            $DB->doQuery($query);
         }
     }
 
@@ -290,11 +290,22 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
             echo "<input type='hidden' name='items_id' value='" . $item->getID() . "'>";
             echo "<input type='hidden' name='itemtype' value='" . $item->getType() . "'>";
             $used = array();
-            $query = "SELECT `id`
-                   FROM `glpi_plugin_simcard_simcards`
-                   WHERE `is_template`='0'
-                      AND `id` IN (SELECT `plugin_simcard_simcards_id`
-                                   FROM `glpi_plugin_simcard_simcards_items`)";
+            $query = [
+                "SELECT" => PluginSimcardSimcard::getTable() . ".id",
+                "FROM" => PluginSimcardSimcard::getTable(),
+                "WHERE" => [
+                    "is_template" => "0",
+                    "id" => new \Glpi\DBAL\QuerySubQuery([
+                        "SELECT" => "plugin_simcard_simcards_id",
+                        "FROM" => PluginSimcardSimcard_Item::getTable(),
+                    ])
+                ]
+            ];
+//            $query = "SELECT `id`
+//                   FROM `glpi_plugin_simcard_simcards`
+//                   WHERE `is_template`='0'
+//                      AND `id` IN (SELECT `plugin_simcard_simcards_id`
+//                                   FROM `glpi_plugin_simcard_simcards_items`)";
             foreach ($DB->request($query) as $use) {
                 $used[] = $use['id'];
             }
@@ -381,23 +392,26 @@ class PluginSimcardSimcard_Item extends CommonDBRelation
         echo "</div>";
     }
 
+    public static function getIcon()
+    {
+        return "ti ti-sitemap";
+    }
+
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        global $CFG_GLPI;
-
         if (PluginSimcardSimcard::canView()) {
+            $nb = 0;
             switch ($item->getType()) {
-                case 'PluginSimcardSimcard' :
+                case 'PluginSimcardSimcard':
                     if ($_SESSION['glpishow_count_on_tabs']) {
-                        return self::createTabEntry(_n('Associated item', 'Associated items', 2), self::countForSimcard($item));
+                        $nb = self::countForSimcard($item);
                     }
-                    return _n('Associated item', 'Associated items', 2);
-
-                default :
+                    return self::createTabEntry(_n('Associated item', 'Associated items', 2), $nb, $item::getType());
+                default:
                     if ($_SESSION['glpishow_count_on_tabs']) {
-                        return self::createTabEntry(PluginSimcardSimcard::getTypeName(2), self::countForItemByItemtype($item));
+                        $nb = self::countForItemByItemtype($item);
                     }
-                    return _n('SIM card', 'SIM cards', 2);
+                    return self::createTabEntry(PluginSimcardSimcard::getTypeName(2), $nb, $item::getType(), PluginSimcardSimcard::getIcon());
             }
         }
         return '';

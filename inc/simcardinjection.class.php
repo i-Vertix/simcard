@@ -37,13 +37,6 @@ if (!defined('GLPI_ROOT')) {
 class PluginSimcardSimcardInjection extends PluginSimcardSimcard implements PluginDatainjectionInjectionInterface
 {
 
-    public function __construct()
-    {
-        parent::__construct();
-        //Needed for getSearchOptions !
-        $this->table = getTableForItemType(get_parent_class($this));
-    }
-
 
     public function isPrimaryType()
     {
@@ -66,6 +59,9 @@ class PluginSimcardSimcardInjection extends PluginSimcardSimcard implements Plug
      **/
     public static function getTable($classname = null): string
     {
+        /**
+         * @var $parenttype CommonDBTM
+         */
         $parenttype = get_parent_class(__CLASS__);
         return $parenttype::getTable();
     }

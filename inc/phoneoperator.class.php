@@ -57,7 +57,7 @@ class PluginSimcardPhoneOperator extends CommonDropdown {
               PRIMARY KEY (`id`),
               KEY `name` (`name`)
             ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-         $DB->doQuery($query) or die($DB->error());
+         $DB->doQuery($query);
       }
    }
 
@@ -77,7 +77,7 @@ class PluginSimcardPhoneOperator extends CommonDropdown {
       
       // Remove dropdowns localization
       $dropdownTranslation = new DropdownTranslation();
-      $dropdownTranslation->deleteByCriteria(array("itemtype LIKE 'PluginSimcardPhoneOperator'"), 1);
+      $dropdownTranslation->deleteByCriteria(["itemtype" => 'PluginSimcardPhoneOperator'], true, false);
 
       $table = getTableForItemType(__CLASS__);
       $DB->doQuery("DROP TABLE IF EXISTS `$table`");
