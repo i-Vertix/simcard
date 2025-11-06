@@ -235,7 +235,7 @@ class PluginSimcardSimcard extends CommonDBTM
         User::dropdown([
             'name' => 'users_id',
             'value' => $this->fields["users_id"],
-            'right' => 'own_ticket',
+            'right' => 'all',
             'entity' => $this->fields["entities_id"],
             'rand' => $randDropdown
         ]);
