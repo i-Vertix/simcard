@@ -102,6 +102,18 @@ class Simcard_Item extends CommonDBRelation
         ]);
     }
 
+    public function prepareInputForAdd($input)
+    {
+        if (
+            !is_array($input)
+            || !isset($input['itemtype'])
+            || !in_array($input['itemtype'], self::getClasses(), true)
+        ) {
+            return false;
+        }
+        return parent::prepareInputForAdd($input);
+    }
+
     public static function getClasses(): array
     {
         return self::$linkableClasses;

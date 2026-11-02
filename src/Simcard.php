@@ -49,7 +49,6 @@ use Location;
 use Log;
 use MassiveAction;
 use Migration;
-use NetworkPort;
 use Notepad;
 use Plugin;
 use SavedSearch;
@@ -100,7 +99,6 @@ class Simcard extends CommonDBTM
         if ($this->fields['id'] > 0) {
             if (empty($options['withtemplate'])) {
                 $this->addStandardTab(Simcard_Item::class, $ong, $options);
-                $this->addStandardTab(NetworkPort::class, $ong, $options);
                 $this->addStandardTab(Document_Item::class, $ong, $options);
                 $this->addStandardTab(Infocom::class, $ong, $options);
                 $this->addStandardTab(Contract_Item::class, $ong, $options);
@@ -318,13 +316,20 @@ class Simcard extends CommonDBTM
 
     public function post_addItem()
     {
-        if (isset($this->input['_itemtype'], $this->input['_items_id'])) {
+        if (
+            isset($this->input['_itemtype'], $this->input['_items_id'])
+            && is_string($this->input['_itemtype'])
+            && in_array($this->input['_itemtype'], Simcard_Item::getClasses(), true)
+        ) {
             $simcard_item = new Simcard_Item();
-            $simcard_item->add([
+            $link = [
                 'plugin_simcard_simcards_id' => $this->getID(),
                 'itemtype'                   => $this->input['_itemtype'],
-                'items_id'                   => $this->input['_items_id'],
-            ]);
+                'items_id'                   => (int) $this->input['_items_id'],
+            ];
+            if ($simcard_item->can(-1, CREATE, $link)) {
+                $simcard_item->add($link);
+            }
         }
     }
 
@@ -794,7 +799,10 @@ class Simcard extends CommonDBTM
                         'plugin_simcard_phoneoperators_id'  => PhoneOperator::class,
                     ];
                     foreach ($ids as $key) {
-                        $item->getFromDB($key);
+                        if (!$item->can($key, UPDATE)) {
+                            $ma->itemDone($item->getType(), $key, MassiveAction::ACTION_NORIGHT);
+                            continue;
+                        }
                         $values = ['id' => $key, 'entities_id' => $entity];
                         foreach ($dropdowns as $field => $dropdown) {
                             $new_id = $dropdown::transfer((int) $item->fields[$field], $entity);
