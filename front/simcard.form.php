@@ -30,87 +30,81 @@
  ---------------------------------------------------------------------- */
 
 use Glpi\Event;
+use GlpiPlugin\Simcard\Simcard;
 
-include ('../../../inc/includes.php');
+$simcard = new Simcard();
 
-PluginSimcardSimcard::canView();
-
-if (!isset($_GET["id"])) {
-   $_GET["id"] = "";
-}
-
-if (!isset($_GET["sort"])) {
-   $_GET["sort"] = "";
-}
-
-if (!isset($_GET["order"])) {
-   $_GET["order"] = "";
-}
-
-if (!isset($_GET["withtemplate"])) {
-   $_GET["withtemplate"] = "";
-}
-
-$simcard = new PluginSimcardSimcard();
-//Add a new simcard
-if (isset($_POST["add"])) {
-   $simcard->check(-1, CREATE, $_POST);
-   if ($newID = $simcard->add($_POST)) {
-      Event::log($newID, "simcard", 4, "inventory",
-                 sprintf(__('%1$s adds the item %2$s'), $_SESSION["glpiname"], $_POST["name"]));
-   }
-   Html::back();
-
-// delete a simcard
-} else if (isset($_POST["delete"])) {
-   $simcard->check($_POST['id'], DELETE);
-   $ok = $simcard->delete($_POST);
-   if ($ok) {
-      Event::log($_POST["id"], "simcard", 4, "inventory",
-                 //TRANS: %s is the user login
-                 sprintf(__('%s deletes an item'), $_SESSION["glpiname"]));
-   }
-   $simcard->redirectToList();
-
-} else if (isset($_POST["restore"])) {
-   $simcard->check($_POST['id'], PURGE);
-   if ($simcard->restore($_POST)) {
-      Event::log($_POST["id"],"simcard", 4, "inventory",
-                 //TRANS: %s is the user login
-                 sprintf(__('%s restores the item'), $_SESSION["glpiname"]));
-   }
-   $simcard->redirectToList();
-   
-} else if (isset($_REQUEST["purge"])) {
-   $simcard->check($_REQUEST['id'], PURGE);
-   if ($simcard->delete($_REQUEST, 1)) {
-      Event::log($_POST["id"], "simcard", 4, "inventory",
-                 //TRANS: %s is the user login
-                 sprintf(__('%s purges an item'), $_SESSION["glpiname"]));
-   }
-   $simcard->redirectToList();
-   
-//update a simcard
-} else if (isset($_POST["update"])) {
-   $simcard->check($_POST['id'], UPDATE);
-   $simcard->update($_POST);
-   Event::log($_POST["id"], "simcard", 4, "inventory",
-              //TRANS: %s is the user login
-              sprintf(__('%s updates an item'), $_SESSION["glpiname"]));
-   Html::back();
-
-} else if (isset($_GET["unglobalize"])) {
-   $simcard->check($_GET["id"], UPDATE);
-
-   //TODO There is probably a bug here... 
-   Html::redirect(Toolbox::getItemTypeFormURL('PluginSimcardSimcard')."?id=".$_GET["id"]);
-   
-} else {//print simcard information
-   // Affichage du fil d'Ariane
-   Html::header(PluginSimcardSimcard::getTypeName(1), $_SERVER["PHP_SELF"], "assets", "pluginsimcardsimcard", "simcard");
-
-   //show simcard form to add
-   $simcard->display(array('id' => $_GET["id"],
-                            'withtemplate' => $_GET["withtemplate"]));
-   html::footer();
+if (isset($_POST['add'])) {
+    // Add a new simcard
+    $simcard->check(-1, CREATE, $_POST);
+    if ($newID = $simcard->add($_POST)) {
+        Event::log(
+            $newID,
+            'simcard',
+            4,
+            'inventory',
+            sprintf(__('%1$s adds the item %2$s'), $_SESSION['glpiname'], $_POST['name'])
+        );
+    }
+    Html::back();
+} elseif (isset($_POST['delete'])) {
+    // Delete a simcard
+    $simcard->check($_POST['id'], DELETE);
+    if ($simcard->delete($_POST)) {
+        Event::log(
+            $_POST['id'],
+            'simcard',
+            4,
+            'inventory',
+            //TRANS: %s is the user login
+            sprintf(__('%s deletes an item'), $_SESSION['glpiname'])
+        );
+    }
+    $simcard->redirectToList();
+} elseif (isset($_POST['restore'])) {
+    $simcard->check($_POST['id'], PURGE);
+    if ($simcard->restore($_POST)) {
+        Event::log(
+            $_POST['id'],
+            'simcard',
+            4,
+            'inventory',
+            //TRANS: %s is the user login
+            sprintf(__('%s restores the item'), $_SESSION['glpiname'])
+        );
+    }
+    $simcard->redirectToList();
+} elseif (isset($_POST['purge'])) {
+    $simcard->check($_POST['id'], PURGE);
+    if ($simcard->delete($_POST, true)) {
+        Event::log(
+            $_POST['id'],
+            'simcard',
+            4,
+            'inventory',
+            //TRANS: %s is the user login
+            sprintf(__('%s purges an item'), $_SESSION['glpiname'])
+        );
+    }
+    $simcard->redirectToList();
+} elseif (isset($_POST['update'])) {
+    // Update a simcard
+    $simcard->check($_POST['id'], UPDATE);
+    $simcard->update($_POST);
+    Event::log(
+        $_POST['id'],
+        'simcard',
+        4,
+        'inventory',
+        //TRANS: %s is the user login
+        sprintf(__('%s updates an item'), $_SESSION['glpiname'])
+    );
+    Html::back();
+} else {
+    // Print simcard information
+    Simcard::displayFullPageForItem(
+        $_GET['id'] ?? 0,
+        Simcard::getSectorizedDetails(),
+        ['withtemplate' => $_GET['withtemplate'] ?? '']
+    );
 }

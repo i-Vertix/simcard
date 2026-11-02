@@ -29,26 +29,24 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
-if (!defined('GLPI_ROOT')) {
-    die("Sorry. You can't access directly to this file");
-}
+namespace GlpiPlugin\Simcard;
+
+use PluginDatainjectionCommonInjectionLib;
+use PluginDatainjectionInjectionInterface;
+use Search;
 
 /// class SimcardInjection
-class PluginSimcardSimcardInjection extends PluginSimcardSimcard implements PluginDatainjectionInjectionInterface
+class SimcardInjection extends Simcard implements PluginDatainjectionInjectionInterface
 {
-
-
     public function isPrimaryType()
     {
         return true;
     }
 
-
     public function connectedTo()
     {
-        return array();
+        return [];
     }
-
 
     /**
      * Return the table used to store this object
@@ -59,11 +57,7 @@ class PluginSimcardSimcardInjection extends PluginSimcardSimcard implements Plug
      **/
     public static function getTable($classname = null): string
     {
-        /**
-         * @var $parenttype CommonDBTM
-         */
-        $parenttype = get_parent_class(__CLASS__);
-        return $parenttype::getTable();
+        return Simcard::getTable();
     }
 
     /**
@@ -71,30 +65,28 @@ class PluginSimcardSimcardInjection extends PluginSimcardSimcard implements Plug
      **/
     public function getOptions($primary_type = '')
     {
-        $tab = Search::getOptions(get_parent_class($this));
+        $tab = Search::getOptions(Simcard::class);
 
-        //Remove some options because some fields cannot be imported
-        $blacklist = PluginDatainjectionCommonInjectionLib::getBlacklistedOptions(get_parent_class($this));
+        // Remove some options because some fields cannot be imported
+        $blacklist = PluginDatainjectionCommonInjectionLib::getBlacklistedOptions(Simcard::class);
         $notimportable = [];
 
         $options['ignore_fields'] = array_merge($blacklist, $notimportable);
-        $options['displaytype'] = ["multiline_text" => [16]];
+        $options['displaytype'] = ['multiline_text' => [16]];
 
         return PluginDatainjectionCommonInjectionLib::addToSearchOptions($tab, $options, $this);
     }
 
-
     /**
      * Standard method to add an object into glpi
      *
-     * @param values fields to add into glpi
-     * @param options options used during creation
+     * @param array $values  fields to add into glpi
+     * @param array $options options used during creation
      *
-     * @return an array of IDs of newly created objects : for example array(Computer=>1, Networkport=>10)
+     * @return array an array of IDs of newly created objects : for example [Computer => 1, Networkport => 10]
      */
-    public function addOrUpdateObject($values = array(), $options = array())
+    public function addOrUpdateObject($values = [], $options = [])
     {
-
         $lib = new PluginDatainjectionCommonInjectionLib($this, $values, $options);
         $lib->processAddOrUpdate();
         return $lib->getInjectionResults();
