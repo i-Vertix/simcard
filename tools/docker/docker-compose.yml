@@ -1,0 +1,55 @@
+# Dev/test environment for the simcard plugin.
+# Usage (from repo root): docker compose -f tools/docker/docker-compose.yml ...
+# glpi12 and glpi11 share DB and GLPI data volumes: run only one at a time.
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: glpi
+      MARIADB_USER: glpi
+      MARIADB_PASSWORD: glpi
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  glpi12:
+    image: glpi/glpi:12.0.1
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8012:80"
+    environment: &glpi-env
+      GLPI_DB_HOST: db
+      GLPI_DB_PORT: "3306"
+      GLPI_DB_NAME: glpi
+      GLPI_DB_USER: glpi
+      GLPI_DB_PASSWORD: glpi
+      GLPI_CRONTAB_ENABLED: "0"
+      # Upgrade tests: run `bin/console db:update` manually after 11 -> 12
+      GLPI_SKIP_AUTOUPDATE: "true"
+    volumes:
+      - glpi-data:/var/glpi
+      - ../..:/var/www/glpi/plugins/simcard
+
+  glpi11:
+    image: glpi/glpi:11.0.12
+    profiles: ["legacy"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8011:80"
+    environment: *glpi-env
+    volumes:
+      - glpi-data:/var/glpi
+      - ./.legacy/simcard:/var/www/glpi/plugins/simcard
+
+volumes:
+  db:
+  glpi-data:
