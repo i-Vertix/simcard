@@ -4,6 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 dest="tools/docker/.legacy/simcard"
+git cat-file -e 456450c^{commit} || { echo "commit 456450c not found" >&2; exit 1; }
 rm -rf "$dest"
 mkdir -p "$dest"
 git archive 456450c | tar -x -C "$dest"

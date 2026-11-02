@@ -36,7 +36,7 @@ Prefix such commands with `MSYS_NO_PATHCONV=1` (or `export MSYS_NO_PATHCONV=1`).
 ## (b) Upgrade path 11 -> 12
 
     tools/docker/make-legacy-plugin.sh          # extracts simcard 1.3.1 (commit 456450c) to tools/docker/.legacy/simcard
-    $dc down -v                                  # start from empty volumes (optional but clean)
+    $dc --profile legacy down -v                               # start from empty volumes (optional but clean)
     $dc --profile legacy up -d glpi11
     $dc exec glpi11 php bin/console plugin:install simcard -u glpi
     $dc exec glpi11 php bin/console plugin:activate simcard
@@ -47,7 +47,7 @@ Prefix such commands with `MSYS_NO_PATHCONV=1` (or `export MSYS_NO_PATHCONV=1`).
     $dc exec glpi12 php bin/console plugin:install simcard -u glpi     # simcard 2.0.0
     $dc exec glpi12 php bin/console plugin:activate simcard
 
-Note: a GLPI 11 database cannot be opened by glpi11 again after `db:update` on 12; use `down -v` to reset.
+Note: a GLPI 11 database cannot be opened by glpi11 again after `db:update` on 12; use `--profile legacy down -v` to reset.
 
 ## Logs
 
