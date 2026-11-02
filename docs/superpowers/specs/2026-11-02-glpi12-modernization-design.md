@@ -1,4 +1,4 @@
-# simcard 2.0.0 – Modernisierung für GLPI 11 + 12
+# simcard 2.0.0 – Modernisierung für GLPI 12
 
 Datum: 2026-11-02 · Status: Entwurf zur Freigabe
 
@@ -7,7 +7,7 @@ Datum: 2026-11-02 · Status: Entwurf zur Freigabe
 Das Plugin wurde aus GLPI 9.x-Code nach GLPI 10/11 portiert, folgt aber strukturell noch dem 9.x-Stil
 (`inc/`-Autoloading, echo-HTML-Formulare, Roh-SQL). Ziel ist eine neue Major-Version **2.0.0**, die
 
-- auf **GLPI 11.0.x und 12.0.x** fehlerfrei läuft (`requirements`: min `11.0.0`, max `12.0.99`),
+- auf **GLPI 12.0.x** fehlerfrei läuft (`requirements`: min `12.0.0`, max `12.0.99`),
 - den aktuellen GLPI-Plugin-Standard umsetzt (PSR-4 `src/`, Namespace `GlpiPlugin\Simcard`, Twig, Migration-API),
 - bekannte Fehler und Sicherheitsprobleme behebt.
 
@@ -15,13 +15,15 @@ Das Plugin wurde aus GLPI 9.x-Code nach GLPI 10/11 portiert, folgt aber struktur
 
 | Thema | Entscheidung |
 |---|---|
-| Versionsbereich | GLPI 11 + 12. GLPI 10 bleibt auf der Linie 1.3.x (nur Wartung). |
+| Versionsbereich | Nur GLPI 12 (Revision vom 2026-11-02: Systeme werden ohnehin auf 12 gehoben). GLPI 10/11 bleiben auf der Linie 1.3.x. |
 | Ansatz | Vollmodernisierung (Namespace, Twig, Migration-API). |
 | PIN/PUK | Verschlüsselt mit `GLPIKey` speichern, Bestand migrieren. |
 | Alte Logs mit PIN/PUK im Klartext | Bleiben unangetastet. |
-| Testumgebung | Docker-Setup (GLPI 11 + 12, MariaDB) im Repo unter `tools/`. |
+| Testumgebung | Docker-Setup im Repo unter `tools/`: GLPI 12 als Zielsystem; GLPI 11 nur, um Ausgangsdaten (simcard 1.3.1) für den Upgrade-Test zu erzeugen. |
 
-**PHP:** ≥ 8.2 (Untergrenze von GLPI 11). GLPI 12 verlangt selbst ≥ 8.3. Code muss unter 8.2 und 8.3+ laufen.
+**PHP:** ≥ 8.3 (Untergrenze von GLPI 12).
+
+**Upgrade-Pfad im Betrieb:** GLPI 11 + simcard 1.3.1 → Core-Update auf GLPI 12 (simcard wird dabei wegen Max-Version deaktiviert) → simcard 2.0.0 einspielen → in *Setup → Plugins* aktualisieren und aktivieren.
 
 ## 2. Bekannte Probleme, die 2.0.0 beheben muss
 
@@ -43,7 +45,7 @@ Das Plugin wurde aus GLPI 9.x-Code nach GLPI 10/11 portiert, folgt aber struktur
 simcard/
 ├── setup.php               Konstanten, plugin_init_simcard(), plugin_version_simcard()
 ├── hook.php                install/uninstall, DB-Relations, Dropdowns, Such-Optionen, Purge, ProfileRight-Sync, Datainjection
-├── composer.json           PSR-4 "GlpiPlugin\\Simcard\\": "src/", php >=8.2
+├── composer.json           PSR-4 "GlpiPlugin\\Simcard\\": "src/", php >=8.3
 ├── src/
 │   ├── Simcard.php             CommonDBTM – das Asset
 │   ├── Simcard_Item.php        CommonDBRelation – Verknüpfung zu Computer/Peripheral/Phone/Printer/NetworkEquipment
@@ -62,7 +64,7 @@ simcard/
 │   ├── simcard.form.php            CRUD
 │   └── simcard_item.form.php       Verknüpfen / Trennen
 ├── locales/                       unverändert (Domain `simcard`), neue Strings in .pot/.po nachziehen, .mo neu kompilieren
-└── tools/docker/                  docker-compose für GLPI 11 + 12 (nur Entwicklung, nicht im Release-Archiv)
+└── tools/docker/                  docker-compose für GLPI 12 (+ GLPI 11 für Upgrade-Ausgangsdaten); nur Entwicklung, nicht im Release-Archiv
 ```
 
 Der Ordner `inc/` entfällt vollständig. Tabellennamen bleiben unverändert, da
@@ -92,7 +94,7 @@ eigene Skripte) weiterläuft. Die Aliase werden erst *nach* der itemtype-Migrati
 - Tabs: Verknüpfte Elemente, Netzwerkports, Dokumente, Infocom, Verträge, Tickets/Probleme (wenn `is_helpdesk_visible`), Notizen, Historie, Ereignisse.
 - `Plugin::registerClass` mit `assignable_types`, `document_types`, `contract_types`, `ticket_types`, `helpdesk_visible_types`,
   `infocom_types`, `unicity_types`, `reservation_types`, `location_types`; dazu `state_types` und `globalsearch_types`.
-  Jeder Schlüssel wird gegen GLPI 11 und 12 geprüft; ein nicht mehr existierender Schlüssel wird weggelassen statt eine Warning auszulösen.
+  Jeder Schlüssel wird gegen GLPI 12 geprüft; ein nicht mehr existierender Schlüssel wird weggelassen statt eine Warning auszulösen.
 - Recht `simcard:simcard` mit Zusatzbit `SIMCARD_ASSOCIATE_TICKET = 128` und Sync nach `helpdesk_item_type` (Hook auf `ProfileRight` add/update).
 - Such-Optionen ab ID 10126 auf den verknüpfbaren Typen (Name, Rufnummer, IMSI).
 - `item_purge`-Hook auf den verknüpfbaren Typen entfernt Verknüpfungen.
@@ -107,7 +109,7 @@ eigene Skripte) weiterläuft. Die Aliase werden erst *nach* der itemtype-Migrati
 
 ### 5.1 Neuinstallation (`Install::install()`)
 
-- Tabellen über `Migration`-API (`$migration->addField`, `addKey`, bzw. `Migration::createTable` falls in 11+12 verfügbar – sonst
+- Tabellen über `Migration`-API (`$migration->addField`, `addKey`, bzw. `Migration::createTable` falls in 12 verfügbar – sonst
   `CREATE TABLE` per `$DB->doQuery()` mit `DBConnection::getDefault*`). Spalten wie heute; PIN/PUK-Spalten `varchar(255)`
   ohne Index.
 - Dropdown-Defaults wie heute (Größen, Spannungen, Typen).
@@ -122,7 +124,7 @@ Die zuvor installierte Version wird vor dem Upgrade aus `glpi_plugins.version` g
    `$migration->renameItemtype($alt, $neu, false)`. Aktualisiert alle `itemtype`-Spalten der DB (Tickets, Logs, Dokumente,
    Infocoms, Display-Preferences, SavedSearches, Reservierungen, Datainjection-Modelle, …). Zusätzlich wird `helpdesk_item_type`
    (JSON) in `glpi_profiles` per Code umgeschrieben, da `renameItemtype` JSON-Felder nicht abdeckt.
-   *Im Plan zu verifizieren:* Verhalten von `renameItemtype` in 11 und 12 bei identischem Tabellennamen und welche Spalten es abdeckt
+   *Im Plan zu verifizieren:* Verhalten von `renameItemtype` in 12 bei identischem Tabellennamen und welche Spalten es abdeckt
    (z. B. `itemtype_1`/`itemtype_2`, `itemtype_link`, Datainjection-Tabellen).
 2. **PIN/PUK verschlüsseln** (nur wenn `version_compare($from, '2.0.0', '<')`): jede nicht-leere `pin`, `pin2`, `puk`, `puk2`
    mit `(new GLPIKey())->encrypt()` neu schreiben (direkt per `$DB->update`, ohne History). Indizes `pin`, `pin2`, `puk`, `puk2` droppen.
@@ -130,7 +132,7 @@ Die zuvor installierte Version wird vor dem Upgrade aus `glpi_plugins.version` g
 3. Altlasten entfernen, falls vorhanden: `glpi_plugin_simcard_configs`, `glpi_plugin_simcard_profiles`.
 4. Kein `ALTER … ENGINE` mehr.
 
-Alle Schritte laufen in einer `Migration` und werden mit `executeMigration()` abgeschlossen. Ausgaben nur über die in 11+12
+Alle Schritte laufen in einer `Migration` und werden mit `executeMigration()` abgeschlossen. Ausgaben nur über die in 12
 vorhandene Migration-API (keine `display*`-Methoden).
 
 ### 5.3 Laufzeit
@@ -155,7 +157,7 @@ Tabellen droppen; `DisplayPreference`, `SavedSearch`, `DropdownTranslation`, `It
 - **Verknüpfungs-Tab** `templates/simcard_item.html.twig`: Formular zum Hinzufügen (auf der SIM-Karte: Itemtype + Item; auf dem Asset:
   SIM-Karte, bereits verknüpfte ausgeschlossen) und Liste über `components/datatable.html.twig` mit Massenaktion „Trennen“.
   Spalten: Typ, Entität, Name (Link), Seriennummer, Inventarnummer.
-- **Profil-Tab**: `Profile::displayRightsChoiceMatrix()` wie bisher; Legende nur wenn in 11+12 vorhanden.
+- **Profil-Tab**: `Profile::displayRightsChoiceMatrix()` wie bisher; Legende nur wenn in 12 vorhanden.
 - **Icon**: `ti ti-device-sim`.
 
 ## 7. Controller und Hooks
@@ -163,26 +165,25 @@ Tabellen droppen; `DisplayPreference`, `SavedSearch`, `DropdownTranslation`, `It
 - Kein `include('../../../inc/includes.php')` (deprecated in 12, entfernt in 13). Front-Skripte laufen über GLPIs Legacy-Router.
 - `front/simcard.php`: `Session::checkRight(Simcard::$rightname, READ)`; `Html::header(...)`, `Search::show(Simcard::class)`, `Html::footer()`.
 - `front/simcard.form.php`: Standardmuster (`add`/`delete`/`restore`/`purge`/`update` mit `check()`; sonst `Simcard::displayFullPageForItem()`
-  falls in 11+12 vorhanden, sonst `Html::header` + `display()`). Event-Logs wie bisher.
+  falls in 12 vorhanden, sonst `Html::header` + `display()`). Event-Logs wie bisher.
 - `front/simcard_item.form.php`: `add` / Massenlöschen mit `check()`; sonst `BadRequestHttpException`.
-- `setup.php`: `PLUGIN_SIMCARD_VERSION = '2.0.0'`, `PLUGIN_SIMCARD_MIN_GLPI = '11.0.0'`, `PLUGIN_SIMCARD_MAX_GLPI = '12.0.99'`;
-  `plugin_init_simcard(): void`; `plugin_version_simcard(): array` mit `requirements` (glpi min/max, php min 8.2);
+- `setup.php`: `PLUGIN_SIMCARD_VERSION = '2.0.0'`, `PLUGIN_SIMCARD_MIN_GLPI = '12.0.0'`, `PLUGIN_SIMCARD_MAX_GLPI = '12.0.99'`;
+  `plugin_init_simcard(): void`; `plugin_version_simcard(): array` mit `requirements` (glpi min/max, php min 8.3);
   `plugin_simcard_check_config(bool $verbose = false): bool` bleibt (GLPI ruft sie bei Install/Aktivierung auf) und gibt `true` zurück.
   Kein `csrf_compliant`, keine `headings*`, kein `migratetypes`, kein `minGlpiVersion`.
-- Alle Overrides von `CommonGLPI`/`CommonDBTM`-Methoden mit Signaturen, die gegen GLPI 11 *und* 12 kompatibel sind
-  (im Plan je Methode gegen beide Versionen abgleichen).
+- Alle Overrides von `CommonGLPI`/`CommonDBTM`-Methoden mit den nativen Typen aus GLPI 12.
 - Datenbankzugriff ausschließlich über `$DB->request([...])`/`$DB->update/insert/delete`; kein String-SQL außer DDL.
 
 ## 8. Test und Abnahme
 
 Kein PHPUnit (bräuchte vollständige GLPI-Testinfrastruktur). Stattdessen:
 
-1. `php -l` auf allen PHP-Dateien unter PHP 8.2 und 8.3 (im Docker-Container).
-2. **Docker-Setup** `tools/docker/docker-compose.yml`: MariaDB + GLPI 11.0.x + GLPI 12.0.x (offizielle `glpi/glpi`-Images, Tags im Plan festlegen),
+1. `php -l` auf allen PHP-Dateien unter PHP 8.3 (im GLPI-12-Container).
+2. **Docker-Setup** `tools/docker/docker-compose.yml`: MariaDB + GLPI 12.0.x als Zielsystem, GLPI 11.0.x nur zum Erzeugen der 1.3.1-Ausgangsdaten (offizielle `glpi/glpi`-Images, Tags im Plan festlegen),
    Plugin per Bind-Mount nach `plugins/simcard`. README-Abschnitt zum Starten. `tools/` wird nicht ins Release-Archiv gepackt.
-3. **Manuelle Abnahme-Checkliste** (je GLPI 11 und 12, per Browser-Pane), `php-errors.log` und `glpi.log` danach ohne Plugin-Warnings:
+3. **Manuelle Abnahme-Checkliste** (auf GLPI 12, per Browser-Pane), `php-errors.log` und `glpi.log` danach ohne Plugin-Warnings:
    - Neuinstallation + Aktivierung; Menü unter *Assets* sichtbar.
-   - Upgrade einer 1.3.1-Installation mit Testdaten (SIM-Karte mit Ticket, Dokument, Infocom, Verknüpfung, Display-Prefs, PIN/PUK):
+   - Upgrade-Pfad wie im Betrieb: GLPI 11 + simcard 1.3.1 mit Testdaten → Core-Update auf 12 → simcard 2.0.0. Testdaten (SIM-Karte mit Ticket, Dokument, Infocom, Verknüpfung, Display-Prefs, PIN/PUK):
      Daten vorhanden, itemtypes umbenannt, PIN/PUK verschlüsselt und im Formular korrekt entschlüsselt, Logs unverändert.
    - Anlegen, Bearbeiten (inkl. Wert mit Apostroph und `<script>`), Löschen, Wiederherstellen, Endgültig löschen.
    - Anlegen über Vorlage.
@@ -196,15 +197,15 @@ Kein PHPUnit (bräuchte vollständige GLPI-Testinfrastruktur). Stattdessen:
 
 ## 9. Nicht im Umfang
 
-- GLPI 10-Unterstützung in 2.x.
+- GLPI 10- und 11-Unterstützung in 2.x.
 - Neue Funktionen (z. B. weitere verknüpfbare Typen, API-Erweiterungen).
 - Bereinigung alter Log-Einträge mit PIN/PUK im Klartext.
 - Automatisierte Test-Suite / CI.
 
 ## 10. Offene Punkte für den Plan (zu verifizieren, keine Designfragen)
 
-- Exakte Signaturen der überschriebenen Methoden in GLPI 11 vs. 12.
-- Verfügbarkeit von `Migration::createTable`, `CommonDBTM::displayFullPageForItem`, `passwordField`-Makro, `Profile::showLegend` in beiden Versionen.
+- Exakte Signaturen der überschriebenen Methoden in GLPI 12.
+- Verfügbarkeit von `Migration::createTable`, `CommonDBTM::displayFullPageForItem`, `passwordField`-Makro, `Profile::showLegend` in GLPI 12.
 - Abdeckung von `Migration::renameItemtype` (Spalten, JSON-Felder, gleicher Tabellenname).
 - Ob `state_types`, `globalsearch_types` und alle `registerClass`-Schlüssel in 12 noch existieren.
-- Docker-Image-Tags für GLPI 11.0.x / 12.0.x.
+- Docker-Image-Tags für GLPI 12.0.x (Ziel) und 11.0.x (Ausgangsdaten).
