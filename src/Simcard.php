@@ -158,6 +158,11 @@ class Simcard extends CommonDBTM
         return true;
     }
 
+    public function post_getEmpty()
+    {
+        $this->fields['is_helpdesk_visible'] = 1;
+    }
+
     public function prepareInputForAdd($input)
     {
         if (isset($input['id']) && $input['id'] > 0) {

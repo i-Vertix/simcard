@@ -9,6 +9,11 @@
 {% block form_fields %}
     {% set entity = item.fields['entities_id']|default(-1) %}
 
+    {# Same condition as the generic form loop: the header only shows the template name for new templates #}
+    {% if withtemplate == 1 and no_header %}
+        {{ fields.autoNameField('template_name', item, __('Template name'), 0, field_options) }}
+    {% endif %}
+
     {% if linked_item is not null %}
         {{ fields.htmlField('', linked_item.getLink(), __('Associated element'), {}) }}
         {{ fields.hiddenField('_itemtype', linked_item.getType()) }}
@@ -110,7 +115,7 @@
         'groups_id',
         item.fields['groups_id'],
         __('Group'),
-        field_options|merge({'entity': entity})
+        field_options|merge({'entity': entity, 'condition': {'is_assign': 1}})
     ) }}
 
     {{ fields.textField(
