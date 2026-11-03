@@ -1,1 +1,4 @@
 .idea/
+# Docker dev env: extracted legacy plugin
+tools/docker/.legacy/
+vendor/

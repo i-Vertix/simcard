@@ -1,0 +1,14 @@
+{
+    "name": "i-vertix/glpi-simcard",
+    "description": "SIM card asset management for GLPI",
+    "type": "glpi-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "GlpiPlugin\\Simcard\\": "src/"
+        }
+    }
+}

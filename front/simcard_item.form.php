@@ -30,31 +30,33 @@
  ---------------------------------------------------------------------- */
 
 use Glpi\Event;
-
-include('../../../inc/includes.php');
+use Glpi\Exception\Http\BadRequestHttpException;
+use GlpiPlugin\Simcard\Simcard_Item;
 
 Session::checkCentralAccess();
 
-$simcard_item = new PluginSimcardSimcard_Item();
-if (isset($_POST["additem"])) {
-    if (isset($_POST["items_id"]) && ($_POST["items_id"] > 0)) {
-        $simcard_item->check(-1, CREATE, $_POST);
-        if ($simcard_item->add($_POST)) {
-            Event::log($_POST["plugin_simcard_simcards_id"], "simcards", 5, "inventory",
-                //TRANS: %s is the user login
-                sprintf(__('%s connects an item'), $_SESSION["glpiname"]));
-        }
+$simcard_item = new Simcard_Item();
+if (isset($_POST['additem'])) {
+    if (!isset($_POST['itemtype']) || !in_array($_POST['itemtype'], Simcard_Item::getClasses(), true)) {
+        throw new BadRequestHttpException();
     }
-    Html::back();
-} else if (isset($_POST["delete_items"])) {
-    if (isset($_POST['todelete'])) {
-        foreach ($_POST['todelete'] as $id => $val) {
-            if ($val == 'on') {
-                $simcard_item->check($id, PURGE);
-                $simcard_item->delete(array('id' => $id), 1);
-            }
-        }
+    $_POST['items_id'] = (int) ($_POST['items_id'] ?? 0);
+    $_POST['plugin_simcard_simcards_id'] = (int) ($_POST['plugin_simcard_simcards_id'] ?? 0);
+    if ($_POST['items_id'] <= 0 || $_POST['plugin_simcard_simcards_id'] <= 0) {
+        throw new BadRequestHttpException();
+    }
+    $simcard_item->check(-1, CREATE, $_POST);
+    if ($simcard_item->add($_POST)) {
+        Event::log(
+            $_POST['plugin_simcard_simcards_id'],
+            'simcards',
+            5,
+            'inventory',
+            //TRANS: %s is the user login
+            sprintf(__('%s connects an item'), $_SESSION['glpiname'])
+        );
     }
     Html::back();
 }
-Html::displayErrorAndDie('Lost');
+
+throw new BadRequestHttpException();

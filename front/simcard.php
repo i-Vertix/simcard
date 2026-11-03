@@ -29,18 +29,12 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
-include ('../../../inc/includes.php');
+use GlpiPlugin\Simcard\Simcard;
 
-// Affichage du fil d'Ariane
-Html::header(PluginSimcardSimcard::getTypeName(2), $_SERVER['PHP_SELF'], "assets", "pluginsimcardsimcard", "simcard");
+Session::checkRight(Simcard::$rightname, READ);
 
-$simcard = new PluginSimcardSimcard();
-if (PluginSimcardSimcard::canView() || PluginSimcardSimcard::canCreate()) {
-   Search::show("PluginSimcardSimcard");
-} else {
-   echo "<div align='center'><br><br><img src=\"".
-      $CFG_GLPI["root_doc"]."/pics/warning.png\" alt=\"warning\"><br><br>";
-   echo "<b>".__s('Access denied')."</b></div>";
-}
+Html::header(Simcard::getTypeName(Session::getPluralNumber()), '', 'assets', Simcard::class);
+
+Search::show(Simcard::class);
 
 Html::footer();

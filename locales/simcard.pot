@@ -78,3 +78,19 @@ msgstr ""
 #: inc/simcard_item.class.php:217
 msgid "New SIM card"
 msgstr ""
+
+#: src/Simcard.php:235
+msgid "Unable to encrypt the PIN and PUK codes: check the GLPI security key (glpicrypt.key)."
+msgstr ""
+
+#: templates/simcard_item.html.twig:11
+msgid "Connect a Device"
+msgstr ""
+
+#: templates/simcard_item.html.twig:11
+msgid "Connect SIM cards"
+msgstr ""
+
+#: templates/simcard.html.twig:156
+msgid "Clear"
+msgstr ""

@@ -29,139 +29,142 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
-define("PLUGIN_SIMCARD_VERSION", "1.3.1");
+use Glpi\Plugin\Hooks;
+use GlpiPlugin\Simcard\PhoneOperator;
+use GlpiPlugin\Simcard\Profile;
+use GlpiPlugin\Simcard\Simcard;
+use GlpiPlugin\Simcard\Simcard_Item;
+use GlpiPlugin\Simcard\SimcardInjection;
+use GlpiPlugin\Simcard\SimcardSize;
+use GlpiPlugin\Simcard\SimcardType;
+use GlpiPlugin\Simcard\SimcardVoltage;
+
+define('PLUGIN_SIMCARD_VERSION', '2.0.0');
 
 // Minimal GLPI version, inclusive
-define("PLUGIN_SIMCARD_GLPI_MIN_VERSION", "10.0");
-define("PLUGIN_SIMCARD_GLPI_MAX_VERSION", "11.0.99");
+define('PLUGIN_SIMCARD_MIN_GLPI', '12.0.0');
+// Maximum GLPI version, exclusive
+define('PLUGIN_SIMCARD_MAX_GLPI', '12.0.99');
 
-// Init the hooks of the plugins -Needed
-function plugin_init_simcard()
+/**
+ * Class names used before 2.0.0 => current namespaced class names.
+ * Kept so that third-party code and stored itemtypes still resolve (deprecated).
+ */
+define('PLUGIN_SIMCARD_LEGACY_CLASSES', [
+    'PluginSimcardSimcard'          => Simcard::class,
+    'PluginSimcardSimcard_Item'     => Simcard_Item::class,
+    'PluginSimcardSimcardSize'      => SimcardSize::class,
+    'PluginSimcardSimcardVoltage'   => SimcardVoltage::class,
+    'PluginSimcardSimcardType'      => SimcardType::class,
+    'PluginSimcardPhoneOperator'    => PhoneOperator::class,
+    'PluginSimcardProfile'          => Profile::class,
+    'PluginSimcardSimcardInjection' => SimcardInjection::class,
+]);
+
+// Lazily alias a legacy class name to its namespaced replacement on first use
+spl_autoload_register(static function (string $class): void {
+    $legacy_classes = PLUGIN_SIMCARD_LEGACY_CLASSES;
+    if (isset($legacy_classes[$class]) && class_exists($legacy_classes[$class])) {
+        class_alias($legacy_classes[$class], $class);
+    }
+});
+
+/**
+ * Init the hooks of the plugin
+ */
+function plugin_init_simcard(): void
 {
-    global $PLUGIN_HOOKS, $CFG_GLPI, $LANG;
+    global $PLUGIN_HOOKS;
 
-    $PLUGIN_HOOKS['csrf_compliant']['simcard'] = true;
+    if (!Plugin::isPluginActive('simcard')) {
+        return;
+    }
 
-    $plugin = new Plugin();
-    if ($plugin->isInstalled('simcard') && $plugin->isActivated('simcard')) {
+    $PLUGIN_HOOKS[Hooks::ASSIGN_TO_TICKET]['simcard'] = true;
 
-        $PLUGIN_HOOKS['assign_to_ticket']['simcard'] = true;
+    // PIN and PUK codes are encrypted with the GLPI key: re-encrypted by GLPI on key change
+    $PLUGIN_HOOKS[Hooks::SECURED_FIELDS]['simcard'] = [
+        'glpi_plugin_simcard_simcards.pin',
+        'glpi_plugin_simcard_simcards.pin2',
+        'glpi_plugin_simcard_simcards.puk',
+        'glpi_plugin_simcard_simcards.puk2',
+    ];
 
-        $PLUGIN_HOOKS['plugin_datainjection_populate']['simcard']
-            = 'plugin_datainjection_populate_simcard';
-        $PLUGIN_HOOKS['item_purge']['simcard'] = array();
+    $PLUGIN_HOOKS['plugin_datainjection_populate']['simcard'] = 'plugin_datainjection_populate_simcard';
 
-        foreach (PluginSimcardSimcard_Item::getClasses() as $type) {
-            $PLUGIN_HOOKS['item_purge']['simcard'][$type] = 'plugin_item_purge_simcard';
+    $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['simcard'] = [];
+    foreach (Simcard_Item::getClasses() as $type) {
+        $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['simcard'][$type] = 'plugin_item_purge_simcard';
+    }
+
+    $PLUGIN_HOOKS[Hooks::ITEM_UPDATE]['simcard'][ProfileRight::class] = 'plugin_simcard_profileRightUpdate';
+    $PLUGIN_HOOKS[Hooks::ITEM_ADD]['simcard'][ProfileRight::class] = 'plugin_simcard_profileRightUpdate';
+
+    Plugin::registerClass(Simcard_Item::class, ['addtabon' => Simcard_Item::getClasses()]);
+    Plugin::registerClass(Profile::class, ['addtabon' => \Profile::class]);
+
+    Plugin::registerClass(Simcard::class, [
+        'assignable_types'       => true,
+        'document_types'         => true,
+        'contract_types'         => true,
+        'ticket_types'           => true,
+        'helpdesk_visible_types' => true,
+        'infocom_types'          => true,
+        'unicity_types'          => true,
+        'reservation_types'      => true,
+        'location_types'         => true,
+        'state_types'            => true,
+        'globalsearch_types'     => true,
+    ]);
+
+    // if glpi is loaded
+    if (Session::getLoginUserID()) {
+        // Display a menu entry ?
+        if (
+            Simcard::canCreate()
+            || Simcard::canUpdate()
+            || Simcard::canDelete()
+            || Simcard::canView()
+        ) {
+            $PLUGIN_HOOKS[Hooks::MENU_TOADD]['simcard'] = ['assets' => Simcard::class];
         }
 
-        $PLUGIN_HOOKS['item_update']['simcard']['ProfileRight'] = 'plugin_simcard_profileRightUpdate';
-        $PLUGIN_HOOKS['item_add']['simcard']['ProfileRight'] = 'plugin_simcard_profileRightUpdate';
-
-        Plugin::registerClass(
-            'PluginSimcardSimcard_Item',
-            array('addtabon' => PluginSimcardSimcard_Item::getClasses())
-        );
-        Plugin::registerClass(
-            'PluginSimcardProfile',
-            array('addtabon' => 'Profile')
-        );
-
-        // Params : plugin name - string type - number - class - table - form page
-        Plugin::registerClass(
-            'PluginSimcardSimcard',
-            array(
-                'assignable_types' => true,
-                'document_types' => true,
-                'contract_types' => true,
-                'ticket_types' => true,
-                'helpdesk_visible_types' => true,
-                'infocom_types' => true,
-                'unicity_types' => true,
-                'reservation_types' => true,
-                'location_types' => true
-            )
-        );
-        $CFG_GLPI['state_types'][] = 'PluginSimcardSimcard';
-        $CFG_GLPI['globalsearch_types'][] = 'PluginSimcardSimcard';
-
-        //if glpi is loaded
-        if (Session::getLoginUserID()) {
-
-            // Display a menu entry ?
-            if (
-                PluginSimcardSimcard::canCreate()
-                || PluginSimcardSimcard::canUpdate()
-                || PluginSimcardSimcard::canDelete()
-                || PluginSimcardSimcard::canView()
-            ) {
-                //menu entry
-                $PLUGIN_HOOKS['menu_toadd']['simcard'] = array('assets' => 'PluginSimcardSimcard');
-                //search link
-                //add simcard to items details
-                $PLUGIN_HOOKS['headings']['simcard'] = 'plugin_get_headings_simcard';
-                $PLUGIN_HOOKS['headings_action']['simcard'] = 'plugin_headings_actions_simcard';
-                $PLUGIN_HOOKS['headings_actionpdf']['simcard'] = 'plugin_headings_actionpdf_simcard';
-            }
-
-            if (PluginSimcardSimcard::canCreate()) {
-                //add link
-
-                //use massiveaction in the plugin
-                $PLUGIN_HOOKS['use_massive_action']['simcard'] = 1;
-            }
-
-            // Import from Data_Injection plugin
-            $PLUGIN_HOOKS['migratetypes']['simcard'] = 'plugin_datainjection_migratetypes_simcard';
-            $PLUGIN_HOOKS['menu']['simcard'] = true;
-            $PLUGIN_HOOKS['post_init']['simcard'] = 'plugin_simcard_postinit';
+        if (Simcard::canCreate()) {
+            // use massiveaction in the plugin
+            $PLUGIN_HOOKS[Hooks::USE_MASSIVE_ACTION]['simcard'] = 1;
         }
+
+        $PLUGIN_HOOKS[Hooks::POST_INIT]['simcard'] = 'plugin_simcard_postinit';
     }
-}
-
-// Get the name and the version of the plugin - Needed
-function plugin_version_simcard()
-{
-    global $LANG;
-    return array(
-        'name' => __s('Sim cards management', 'simcard'),
-        'version' => PLUGIN_SIMCARD_VERSION,
-        'author' => '<a href="https://www.pgum.eu/">PGUM s.r.l.</a>, <a href="https://github.com/i-Vertix/simcard">i-Vertix NMS</a>',
-        'license' => 'GPLv2',
-        'homepage' => 'https://github.com/i-Vertix/simcard',
-        'minGlpiVersion' => PLUGIN_SIMCARD_GLPI_MIN_VERSION,
-        'requirements' => ['glpi' => [
-            'min' => PLUGIN_SIMCARD_GLPI_MIN_VERSION,
-            'max' => PLUGIN_SIMCARD_GLPI_MAX_VERSION
-        ]]
-    );
-}
-
-// Optional : check prerequisites before install : may print errors or add to message after redirect
-function plugin_simcard_check_prerequisites()
-{
-    if (version_compare(GLPI_VERSION, PLUGIN_SIMCARD_GLPI_MIN_VERSION, 'lt') || version_compare(GLPI_VERSION, PLUGIN_SIMCARD_GLPI_MAX_VERSION, 'ge')) {
-        echo "This plugin requires GLPI >= " . PLUGIN_SIMCARD_GLPI_MIN_VERSION . " and GLPI < " . PLUGIN_SIMCARD_GLPI_MAX_VERSION;
-        return false;
-    }
-    return true;
-}
-
-// Uninstall process for plugin : need to return true if succeeded : may display messages or add to message after redirect
-function plugin_simcard_check_config()
-{
-    return true;
 }
 
 /**
- *
- * Migrate itemtype integer (0.72) to string (0.80)
- *
- * @param array $types
- * @return array
+ * Get the name and the version of the plugin
  */
-function plugin_datainjection_migratetypes_simcard(array $types)
+function plugin_version_simcard(): array
 {
-    $types[1300] = 'PluginSimcardsSimcard';
-    return $types;
+    return [
+        'name'         => __('Sim cards management', 'simcard'),
+        'version'      => PLUGIN_SIMCARD_VERSION,
+        'author'       => '<a href="https://www.pgum.eu/">PGUM s.r.l.</a>, <a href="https://github.com/i-Vertix/simcard">i-Vertix NMS</a>',
+        'license'      => 'GPLv2',
+        'homepage'     => 'https://github.com/i-Vertix/simcard',
+        'requirements' => [
+            'glpi' => [
+                'min' => PLUGIN_SIMCARD_MIN_GLPI,
+                'max' => PLUGIN_SIMCARD_MAX_GLPI,
+            ],
+            'php'  => [
+                'min' => '8.3',
+            ],
+        ],
+    ];
+}
+
+/**
+ * Called by GLPI on install and activation
+ */
+function plugin_simcard_check_config(bool $verbose = false): bool
+{
+    return true;
 }
