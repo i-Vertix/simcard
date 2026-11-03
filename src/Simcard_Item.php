@@ -34,11 +34,9 @@ namespace GlpiPlugin\Simcard;
 use CommonDBRelation;
 use CommonDBTM;
 use CommonGLPI;
-use DBConnection;
 use Dropdown;
 use Glpi\DBAL\QuerySubQuery;
 use Html;
-use Migration;
 use Plugin;
 use Toolbox;
 
@@ -128,43 +126,6 @@ class Simcard_Item extends CommonDBRelation
             self::$linkableClasses[] = $itemtype;
             Plugin::registerClass(self::class, ['addtabon' => $itemtype]);
         }
-    }
-
-    public static function install(Migration $migration): void
-    {
-        global $DB;
-
-        $default_charset = DBConnection::getDefaultCharset();
-        $default_collation = DBConnection::getDefaultCollation();
-        $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
-
-        $table = self::getTable();
-        if (!$DB->tableExists($table)) {
-            $query = "CREATE TABLE IF NOT EXISTS `$table` (
-              `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
-              `items_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `plugin_simcard_simcards_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `itemtype` varchar(100) NOT NULL,
-              PRIMARY KEY (`id`),
-              KEY `plugin_simcard_simcards_id` (`plugin_simcard_simcards_id`),
-              KEY `item` (`itemtype`,`items_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-            $DB->doQuery($query);
-        }
-    }
-
-    public static function upgrade(Migration $migration): void
-    {
-        global $DB;
-        $table = self::getTable();
-        $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
-    }
-
-    public static function uninstall(): void
-    {
-        global $DB;
-        $table = self::getTable();
-        $DB->doQuery("DROP TABLE IF EXISTS `$table`");
     }
 
     public static function showForSimcard(Simcard $simcard): void

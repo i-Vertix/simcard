@@ -32,7 +32,6 @@
 namespace GlpiPlugin\Simcard;
 
 use CommonGLPI;
-use Migration;
 use ProfileRight;
 
 class Profile extends \Profile
@@ -47,8 +46,14 @@ class Profile extends \Profile
         $this->add(['profiles_id' => $ID]);
     }
 
+    /**
+     * Grant a profile full access to SIM cards (and ticket association), and make
+     * SIM cards selectable on helpdesk items of that profile.
+     */
     public static function createFirstAccess(int $profiles_id): void
     {
+        global $DB;
+
         $currentRights = ProfileRight::getProfileRights(
             $profiles_id,
             [self::RIGHT_SIMCARD_SIMCARD]
@@ -61,9 +66,31 @@ class Profile extends \Profile
         ]);
         ProfileRight::updateProfileRights($profiles_id, $firstAccessRights);
 
-        // Add right to the current session
-        $_SESSION['glpiactiveprofile'][self::RIGHT_SIMCARD_SIMCARD] = $firstAccessRights[self::RIGHT_SIMCARD_SIMCARD];
-        $_SESSION['glpiactiveprofile']['helpdesk_item_type'][] = Simcard::class;
+        // Persist the helpdesk item type (the profile right hook is not active during installation)
+        $profile = new \Profile();
+        if ($profile->getFromDB($profiles_id)) {
+            $types = $profile->fields['helpdesk_item_type'] ?? [];
+            if (!is_array($types)) {
+                $types = json_decode((string) $types, true);
+            }
+            $types = is_array($types) ? $types : [];
+            if (!in_array(Simcard::class, $types, true)) {
+                $types[] = Simcard::class;
+                $DB->update(
+                    \Profile::getTable(),
+                    ['helpdesk_item_type' => json_encode(array_values($types))],
+                    ['id' => $profiles_id]
+                );
+            }
+        }
+
+        // Update the current session only if it belongs to this profile
+        if (($_SESSION['glpiactiveprofile']['id'] ?? null) == $profiles_id) {
+            $_SESSION['glpiactiveprofile'][self::RIGHT_SIMCARD_SIMCARD] = $firstAccessRights[self::RIGHT_SIMCARD_SIMCARD];
+            if (!in_array(Simcard::class, $_SESSION['glpiactiveprofile']['helpdesk_item_type'] ?? [], true)) {
+                $_SESSION['glpiactiveprofile']['helpdesk_item_type'][] = Simcard::class;
+            }
+        }
     }
 
     /**
@@ -104,17 +131,6 @@ class Profile extends \Profile
         return true;
     }
 
-    public static function install(Migration $migration): void
-    {
-        // Table no longer needed in GLPI 0.85+; drop it. Needed for upgrades
-        $migration->dropTable(self::getTable());
-        self::createFirstAccess((int) ($_SESSION['glpiactiveprofile']['id'] ?? 4));
-    }
-
-    public static function upgrade(Migration $migration): void
-    {
-    }
-
     public static function translateARight($old_right)
     {
         switch ($old_right) {
@@ -132,14 +148,6 @@ class Profile extends \Profile
             default:
                 return 0;
         }
-    }
-
-    public static function uninstall(): void
-    {
-        ProfileRight::deleteProfileRights([
-            self::RIGHT_SIMCARD_SIMCARD,
-        ]);
-        unset($_SESSION['glpiactiveprofile'][self::RIGHT_SIMCARD_SIMCARD]);
     }
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)

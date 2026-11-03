@@ -44,8 +44,12 @@ Prefix such commands with `MSYS_NO_PATHCONV=1` (or `export MSYS_NO_PATHCONV=1`).
     $dc --profile legacy stop glpi11
     $dc up -d glpi12
     $dc exec glpi12 php bin/console db:update
+    $dc exec glpi12 php bin/console plugin:resume_execution            # plugins stay suspended after a major update
     $dc exec glpi12 php bin/console plugin:install simcard -u glpi     # simcard 2.0.0
     $dc exec glpi12 php bin/console plugin:activate simcard
+
+After `db:update`, `plugin:list` still shows simcard 1.3.1 as "Enabled" (plugins execution is suspended
+by the update, so `plugin:install` refuses to run); after `plugin:resume_execution` it shows 2.0.0 as "To update".
 
 Note: a GLPI 11 database cannot be opened by glpi11 again after `db:update` on 12; use `--profile legacy down -v` to reset.
 

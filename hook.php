@@ -29,6 +29,7 @@
  @since     2009
  ---------------------------------------------------------------------- */
 
+use GlpiPlugin\Simcard\Install;
 use GlpiPlugin\Simcard\PhoneOperator;
 use GlpiPlugin\Simcard\Profile;
 use GlpiPlugin\Simcard\Simcard;
@@ -42,28 +43,15 @@ function plugin_simcard_install(): bool
 {
     global $DB;
 
+    $plugin = new Plugin();
+    $plugin->getFromDBbyDir('simcard');
+    $from = $plugin->fields['version'] ?? '0.0.0';
+
     $migration = new Migration(PLUGIN_SIMCARD_VERSION);
-    if (!$DB->tableExists(Simcard::getTable())) {
-        // Installation of the plugin
-        Profile::install($migration);
-        Simcard::install($migration);
-        SimcardSize::install($migration);
-        SimcardVoltage::install($migration);
-        SimcardType::install($migration);
-        PhoneOperator::install($migration);
-        Simcard_Item::install($migration);
+    if (!$DB->tableExists('glpi_plugin_simcard_simcards')) {
+        Install::install($migration);
     } else {
-        // Updating the plugin
-        Profile::upgrade($migration);
-        Simcard::upgrade($migration);
-        SimcardSize::upgrade($migration);
-        SimcardVoltage::upgrade($migration);
-        SimcardType::upgrade($migration);
-        PhoneOperator::upgrade($migration);
-        Simcard_Item::upgrade($migration);
-    }
-    if ($DB->tableExists('glpi_plugin_simcard_configs')) {
-        $migration->dropTable('glpi_plugin_simcard_configs');
+        Install::upgrade($migration, $from);
     }
     $migration->executeMigration();
     return true;
@@ -71,20 +59,8 @@ function plugin_simcard_install(): bool
 
 function plugin_simcard_uninstall(): bool
 {
-    global $DB;
-
     $migration = new Migration(PLUGIN_SIMCARD_VERSION);
-
-    Profile::uninstall();
-    Simcard::uninstall();
-    SimcardSize::uninstall();
-    SimcardVoltage::uninstall();
-    SimcardType::uninstall();
-    PhoneOperator::uninstall();
-    Simcard_Item::uninstall();
-    if ($DB->tableExists('glpi_plugin_simcard_configs')) {
-        $migration->dropTable('glpi_plugin_simcard_configs');
-    }
+    Install::uninstall($migration);
     $migration->executeMigration();
     return true;
 }

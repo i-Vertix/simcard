@@ -34,12 +34,8 @@ namespace GlpiPlugin\Simcard;
 use CommonDBTM;
 use CommonGLPI;
 use Contract_Item;
-use DBConnection;
-use DisplayPreference;
 use Document_Item;
 use Dropdown;
-use Fieldblacklist;
-use FieldUnicity;
 use Group;
 use Html;
 use Infocom;
@@ -48,10 +44,7 @@ use Item_Ticket;
 use Location;
 use Log;
 use MassiveAction;
-use Migration;
 use Notepad;
-use Plugin;
-use SavedSearch;
 use Session;
 use User;
 
@@ -555,107 +548,6 @@ class Simcard extends CommonDBTM
         $tab = array_merge($tab, Notepad::rawSearchOptionsToAdd());
 
         return $tab;
-    }
-
-    /**
-     * Installation of the itemtype
-     *
-     * @param Migration $migration migration helper instance
-     */
-    public static function install(Migration $migration): void
-    {
-        global $DB;
-
-        $default_charset = DBConnection::getDefaultCharset();
-        $default_collation = DBConnection::getDefaultCollation();
-        $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
-
-        $table = self::getTable();
-        if (!$DB->tableExists($table)) {
-            $query = "CREATE TABLE IF NOT EXISTS `$table` (
-              `id` int {$default_key_sign} NOT NULL AUTO_INCREMENT,
-              `entities_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `name` varchar(255) NOT NULL DEFAULT '',
-              `phonenumber` varchar(255) NOT NULL DEFAULT '',
-              `serial` varchar(255) NOT NULL DEFAULT '',
-              `pin` varchar(255) NOT NULL DEFAULT '',
-              `pin2` varchar(255) NOT NULL DEFAULT '',
-              `puk` varchar(255) NOT NULL DEFAULT '',
-              `puk2` varchar(255) NOT NULL DEFAULT '',
-              `otherserial` varchar(255) NOT NULL DEFAULT '',
-              `states_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `locations_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `users_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `users_id_tech` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `groups_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `groups_id_tech` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `plugin_simcard_phoneoperators_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `manufacturers_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `plugin_simcard_simcardsizes_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `plugin_simcard_simcardvoltages_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `plugin_simcard_simcardtypes_id` int {$default_key_sign} NOT NULL DEFAULT '0',
-              `comment` text NULL,
-              `date_mod` timestamp DEFAULT NULL,
-              `is_template` tinyint(1) NOT NULL DEFAULT '0',
-              `is_global` tinyint(1) NOT NULL DEFAULT '0',
-              `is_deleted` tinyint(1) NOT NULL DEFAULT '0',
-              `template_name` varchar(255) NULL,
-              `ticket_tco` decimal(20,4) DEFAULT '0.0000',
-              `is_helpdesk_visible` tinyint(1) NOT NULL DEFAULT '1',
-              PRIMARY KEY (`id`),
-              KEY `name` (`name`),
-              KEY `entities_id` (`entities_id`),
-              KEY `states_id` (`states_id`),
-              KEY `plugin_simcard_phoneoperators_id` (`plugin_simcard_phoneoperators_id`),
-              KEY `plugin_simcard_simcardsizes_id` (`plugin_simcard_simcardsizes_id`),
-              KEY `plugin_simcard_simcardvoltages_id` (`plugin_simcard_simcardvoltages_id`),
-              KEY `manufacturers_id` (`manufacturers_id`),
-              KEY `pin` (`pin`),
-              KEY `pin2` (`pin2`),
-              KEY `puk` (`puk`),
-              KEY `puk2` (`puk2`),
-              KEY `serial` (`serial`),
-              KEY `users_id` (`users_id`),
-              KEY `users_id_tech` (`users_id_tech`),
-              KEY `groups_id` (`groups_id`),
-              KEY `is_template` (`is_template`),
-              KEY `is_deleted` (`is_deleted`),
-              KEY `is_helpdesk_visible` (`is_helpdesk_visible`),
-              KEY `is_global` (`is_global`)
-            ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
-            $DB->doQuery($query);
-        }
-        $migration->updateDisplayPrefs([
-            self::class => [1, 412, 80, 411, 410],
-        ], [], true);
-    }
-
-    public static function upgrade(Migration $migration): void
-    {
-        global $DB;
-        $table = self::getTable();
-        $DB->doQuery("ALTER TABLE `$table` ENGINE=InnoDB");
-    }
-
-    public static function uninstall(): void
-    {
-        global $DB;
-
-        // Remove unicity constraints on simcards
-        FieldUnicity::deleteForItemtype(self::class);
-
-        foreach ([Notepad::class, DisplayPreference::class, Contract_Item::class, Infocom::class, Fieldblacklist::class, Document_Item::class, Log::class, SavedSearch::class] as $itemtype) {
-            $item = new $itemtype();
-            $item->deleteByCriteria(['itemtype' => self::class]);
-        }
-
-        $plugin = new Plugin();
-        if ($plugin->isActivated('datainjection') && class_exists('PluginDatainjectionModel')) {
-            \PluginDatainjectionModel::clean(['itemtype' => self::class]);
-        }
-
-        $table = self::getTable();
-        $DB->doQuery("DROP TABLE IF EXISTS `$table`");
     }
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
