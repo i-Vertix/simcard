@@ -37,6 +37,9 @@ Session::checkCentralAccess();
 
 $simcard_item = new Simcard_Item();
 if (isset($_POST['additem'])) {
+    if (!isset($_POST['itemtype']) || !in_array($_POST['itemtype'], Simcard_Item::getClasses(), true)) {
+        throw new BadRequestHttpException();
+    }
     if (isset($_POST['items_id']) && ($_POST['items_id'] > 0)) {
         $simcard_item->check(-1, CREATE, $_POST);
         if ($simcard_item->add($_POST)) {
@@ -48,16 +51,6 @@ if (isset($_POST['additem'])) {
                 //TRANS: %s is the user login
                 sprintf(__('%s connects an item'), $_SESSION['glpiname'])
             );
-        }
-    }
-    Html::back();
-} elseif (isset($_POST['delete_items'])) {
-    if (isset($_POST['todelete'])) {
-        foreach ($_POST['todelete'] as $id => $val) {
-            if ($val == 'on') {
-                $simcard_item->check($id, PURGE);
-                $simcard_item->delete(['id' => $id], true);
-            }
         }
     }
     Html::back();

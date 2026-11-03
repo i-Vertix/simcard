@@ -35,10 +35,9 @@ use CommonDBRelation;
 use CommonDBTM;
 use CommonGLPI;
 use Dropdown;
-use Glpi\DBAL\QuerySubQuery;
-use Html;
+use Entity;
+use Glpi\Application\View\TemplateRenderer;
 use Plugin;
-use Toolbox;
 
 // Relation between Simcard and Items (computer, phone, peripheral only)
 class Simcard_Item extends CommonDBRelation
@@ -130,113 +129,51 @@ class Simcard_Item extends CommonDBRelation
 
     public static function showForSimcard(Simcard $simcard): void
     {
+        global $DB;
+
         if (!$simcard->canView()) {
             return;
         }
 
-        $results = getAllDataFromTable(self::getTable(), ['plugin_simcard_simcards_id' => $simcard->getID()]);
-        $number = count($results);
-        $container = 'massSimcardItem' . mt_rand();
+        $iterator = $DB->request([
+            'FROM'  => self::getTable(),
+            'WHERE' => ['plugin_simcard_simcards_id' => $simcard->getID()],
+        ]);
 
-        if (Simcard::canUpdate() && !$number) {
-            echo "<div class='firstbloc'>";
-            echo "<form id='items' name='items' method='post' action='" . htmlescape(Toolbox::getItemTypeFormURL(self::class)) . "'>";
-            echo "<table class='tab_cadre_fixe'>";
-            echo "<tr class='tab_bg_2'><th colspan='2'>" . __s('Connect a Device') . "</th></tr>";
-            echo "<tr class='tab_bg_1'><td>";
-            echo "<input type='hidden' name='plugin_simcard_simcards_id' value='" . (int) $simcard->getID() . "'>";
-            Dropdown::showSelectItemFromItemtypes([
-                'itemtypes'       => self::getClasses(),
-                'entity_restrict' => $simcard->fields['entities_id'],
-            ]);
-            echo "</td><td class='center'>";
-            echo "<input type='submit' name='additem' value=\"" . _sx('button', 'Connect') . "\" class='btn btn-primary'>";
-            echo "</td></tr>";
-            echo "</table>";
-            Html::closeForm();
-            echo "</div>";
-        }
-
-        echo "<div class='spaced'>";
-        if (Simcard::canUpdate() && $number) {
-            Html::openMassiveActionsForm($container);
-            $massiveactionparams = [
-                'num_displayed'    => min($_SESSION['glpilist_limit'], $number),
-                'specific_actions' => ['purge' => _x('button', 'Disconnect')],
-                'container'        => $container,
+        $entries = [];
+        foreach ($iterator as $data) {
+            if (!in_array($data['itemtype'], self::getClasses(), true)) {
+                continue;
+            }
+            $linked = getItemForItemtype($data['itemtype']);
+            if (!$linked instanceof CommonDBTM || !$linked->getFromDB($data['items_id'])) {
+                continue;
+            }
+            $entries[] = [
+                'itemtype'    => self::class,
+                'id'          => $data['id'],
+                'type'        => $linked::getTypeName(1),
+                'entity'      => Dropdown::getDropdownName('glpi_entities', $linked->fields['entities_id']),
+                'name'        => self::getLinkedItemName($linked),
+                'serial'      => $linked->fields['serial'] ?? '',
+                'otherserial' => $linked->fields['otherserial'] ?? '',
             ];
-            Html::showMassiveActions($massiveactionparams);
-        }
-        echo "<table class='tab_cadre_fixehov'>";
-        if (!empty($results)) {
-            $header_begin = "<tr>";
-            $header_top = '';
-            $header_bottom = '';
-            $header_end = '';
-
-            if (Simcard::canUpdate()) {
-                $header_top .= "<th width='10'>" . Html::getCheckAllAsCheckbox($container);
-                $header_top .= "</th>";
-                $header_bottom .= "<th width='10'>" . Html::getCheckAllAsCheckbox($container);
-                $header_bottom .= "</th>";
-            }
-
-            $header_end .= "<th>" . __s('Type') . "</th>";
-            $header_end .= "<th>" . __s('Entity') . "</th>";
-            $header_end .= "<th>" . __s('Name') . "</th>";
-            $header_end .= "<th>" . __s('Serial number') . "</th>";
-            $header_end .= "<th>" . __s('Inventory number') . "</th>";
-            $header_end .= "</tr>";
-            echo $header_begin . $header_top . $header_end;
-
-            foreach ($results as $data) {
-                $item = getItemForItemtype($data['itemtype']);
-                if (!$item instanceof CommonDBTM) {
-                    continue;
-                }
-                $item->getFromDB($data['items_id']);
-                echo "<tr class='tab_bg_1'>";
-
-                if (Simcard::canUpdate()) {
-                    echo "<td width='10'>";
-                    Html::showMassiveActionCheckBox(self::class, $data['id']);
-                    echo "</td>";
-                }
-
-                echo "<td>";
-                echo htmlescape($item::getTypeName());
-                echo "</td>";
-                echo "<td>";
-                echo htmlescape(Dropdown::getDropdownName('glpi_entities', $item->fields['entities_id']));
-                echo "</td>";
-                echo "<td>";
-                echo $item->getLink();
-                echo "</td>";
-                echo "<td>";
-                if (isset($item->fields['serial'])) {
-                    echo htmlescape($item->fields['serial']);
-                }
-                echo "</td>";
-                echo "<td>";
-                if (isset($item->fields['otherserial'])) {
-                    echo htmlescape($item->fields['otherserial']);
-                }
-                echo "</td>";
-                echo "</tr>";
-            }
-            echo $header_begin . $header_bottom . $header_end;
-        } else {
-            echo "<tr><td class='tab_bg_1 b'><i>" . __s('Not connected') . "</i>";
-            echo "</td></tr>";
-        }
-        echo "</table>";
-        if (Simcard::canUpdate() && $number) {
-            $massiveactionparams['ontop'] = false;
-            Html::showMassiveActions($massiveactionparams);
-            Html::closeForm();
         }
 
-        echo "</div>";
+        $can_edit = $simcard->can($simcard->getID(), UPDATE);
+        $columns = [
+            'type'        => _n('Type', 'Types', 1),
+            'entity'      => Entity::getTypeName(1),
+            'name'        => __('Name'),
+            'serial'      => __('Serial number'),
+            'otherserial' => __('Inventory number'),
+        ];
+
+        self::renderTab('simcard', $can_edit, $entries, $columns, [
+            'simcard'         => $simcard,
+            'entity_restrict' => (int) $simcard->fields['entities_id'],
+            'used_simcards'   => [],
+        ]);
     }
 
     public static function showForItem(CommonDBTM $item): void
@@ -247,113 +184,91 @@ class Simcard_Item extends CommonDBRelation
             return;
         }
 
-        $results = getAllDataFromTable(self::getTable(), [
-            'items_id' => $item->getID(),
-            'itemtype' => get_class($item),
+        $iterator = $DB->request([
+            'FROM'  => self::getTable(),
+            'WHERE' => [
+                'items_id' => $item->getID(),
+                'itemtype' => $item::class,
+            ],
         ]);
-        $container = 'massSimcardItem' . mt_rand();
 
-        $number = count($results);
-        if (Simcard::canUpdate()) {
-            echo "<div class='firstbloc'>";
-            echo "<form id='items' name='items' method='post' action='" . htmlescape(Toolbox::getItemTypeFormURL(self::class)) . "'>";
-            echo "<table class='tab_cadre_fixe'>";
-            echo "<tr class='tab_bg_2'><th colspan='2'>" . __s('Connect SIM cards') . "</th></tr>";
-            echo "<tr class='tab_bg_1'><td>";
-            echo "<input type='hidden' name='items_id' value='" . (int) $item->getID() . "'>";
-            echo "<input type='hidden' name='itemtype' value='" . htmlescape($item->getType()) . "'>";
-            $used = [];
-            $iterator = $DB->request([
-                'SELECT' => Simcard::getTable() . '.id',
-                'FROM'   => Simcard::getTable(),
-                'WHERE'  => [
-                    'is_template' => 0,
-                    'id'          => new QuerySubQuery([
-                        'SELECT' => 'plugin_simcard_simcards_id',
-                        'FROM'   => self::getTable(),
-                    ]),
-                ],
-            ]);
-            foreach ($iterator as $use) {
-                $used[] = $use['id'];
+        $entries = [];
+        foreach ($iterator as $data) {
+            $simcard = new Simcard();
+            if (!$simcard->getFromDB($data['plugin_simcard_simcards_id'])) {
+                continue;
             }
-            Dropdown::show(Simcard::class, [
-                'name'   => 'plugin_simcard_simcards_id',
-                'entity' => $item->fields['entities_id'],
-                'used'   => $used,
-            ]);
-            echo "</td>";
-            echo "<td class='center' width='20%'>";
-            echo "<input type='submit' name='additem' value=\"" . _sx('button', 'Connect') . "\" class='btn btn-primary'>";
-            echo "</td></tr>";
-            echo "</table>";
-            Html::closeForm();
-            echo "</div>";
-        }
-
-        echo "<div class='spaced'>";
-
-        if (Simcard::canDelete() && $number) {
-            Html::openMassiveActionsForm($container);
-            $massiveactionparams = [
-                'num_displayed'    => min($_SESSION['glpilist_limit'], $number),
-                'specific_actions' => ['purge' => _x('button', 'Disconnect')],
-                'container'        => $container,
+            $entries[] = [
+                'itemtype'    => self::class,
+                'id'          => $data['id'],
+                'entity'      => Dropdown::getDropdownName('glpi_entities', $simcard->fields['entities_id']),
+                'name'        => self::getLinkedItemName($simcard),
+                'serial'      => $simcard->fields['serial'],
+                'otherserial' => $simcard->fields['otherserial'],
             ];
-            Html::showMassiveActions($massiveactionparams);
-        }
-        echo "<table class='tab_cadre_fixehov'>";
-
-        $header_begin = "<tr>";
-        $header_top = '';
-        $header_bottom = '';
-        $header_end = '';
-
-        if (Simcard::canDelete()) {
-            $header_top .= "<th width='10'>" . Html::getCheckAllAsCheckbox($container);
-            $header_top .= "</th>";
-            $header_bottom .= "<th width='10'>" . Html::getCheckAllAsCheckbox($container);
-            $header_bottom .= "</th>";
         }
 
-        $header_end .= "<th>" . __s('Entity') . "</th>";
-        $header_end .= "<th>" . __s('Name') . "</th>";
-        $header_end .= "<th>" . __s('IMSI', 'simcard') . "</th>";
-        $header_end .= "<th>" . __s('Inventory number') . "</th>";
-        $header_end .= "</tr>";
-
-        echo $header_begin . $header_top . $header_end;
-
-        foreach ($results as $data) {
-            $tmp = new Simcard();
-            $tmp->getFromDB($data['plugin_simcard_simcards_id']);
-            echo "<tr class='tab_bg_1'>";
-            if (Simcard::canDelete()) {
-                echo "<td width='10'>";
-                Html::showMassiveActionCheckBox(self::class, $data['id']);
-                echo "</td>";
-            }
-            echo "<td>";
-            echo htmlescape(Dropdown::getDropdownName('glpi_entities', $tmp->fields['entities_id']));
-            echo "</td>";
-            echo "<td>";
-            echo $tmp->getLink();
-            echo "</td>";
-            echo "<td>";
-            echo htmlescape($tmp->fields['serial']);
-            echo "</td>";
-            echo "<td>";
-            echo htmlescape($tmp->fields['otherserial']);
-            echo "</td>";
-            echo "</tr>";
+        // A SIM card can only be linked once: hide the already linked ones
+        $used = [];
+        foreach ($DB->request([
+            'SELECT'   => 'plugin_simcard_simcards_id',
+            'DISTINCT' => true,
+            'FROM'     => self::getTable(),
+        ]) as $row) {
+            $used[] = (int) $row['plugin_simcard_simcards_id'];
         }
-        echo $header_begin . $header_bottom . $header_end;
-        echo "</table>";
-        if (!empty($results) && isset($massiveactionparams)) {
-            $massiveactionparams['ontop'] = false;
-            Html::showMassiveActions($massiveactionparams);
+
+        $can_edit = Simcard::canUpdate() || $item->can($item->getID(), UPDATE);
+        $columns = [
+            'entity'      => Entity::getTypeName(1),
+            'name'        => __('Name'),
+            'serial'      => __('IMSI', 'simcard'),
+            'otherserial' => __('Inventory number'),
+        ];
+
+        self::renderTab('item', $can_edit, $entries, $columns, [
+            'item'            => $item,
+            'entity_restrict' => (int) $item->fields['entities_id'],
+            'used_simcards'   => $used,
+        ]);
+    }
+
+    /**
+     * Name of a linked element as raw HTML: a link if the user may view it, escaped plain text otherwise.
+     */
+    private static function getLinkedItemName(CommonDBTM $linked): string
+    {
+        if ($linked->canView()) {
+            return $linked->getLink();
         }
-        echo "</div>";
+        return htmlescape($linked->getName());
+    }
+
+    private static function renderTab(string $mode, bool $can_edit, array $entries, array $columns, array $params): void
+    {
+        TemplateRenderer::getInstance()->display('@simcard/simcard_item.html.twig', $params + [
+            'form_mode' => $mode,
+            'can_edit'  => $can_edit,
+            'form_url'  => self::getFormURL(),
+            'classes'   => self::getClasses(),
+            'simcard_itemtype' => Simcard::class,
+            'datatable' => [
+                'is_tab'              => true,
+                'nofilter'            => true,
+                'nosort'              => true,
+                'columns'             => $columns,
+                'formatters'          => ['name' => 'raw_html'],
+                'entries'             => $entries,
+                'total_number'        => count($entries),
+                'showmassiveactions'  => $can_edit,
+                'massiveactionparams' => [
+                    'num_displayed'    => count($entries),
+                    'itemtype'         => self::class,
+                    'specific_actions' => ['purge' => _x('button', 'Disconnect')],
+                    'container'        => 'massSimcardItem' . mt_rand(),
+                ],
+            ],
+        ]);
     }
 
     public static function getIcon()

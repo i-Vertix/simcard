@@ -1,0 +1,45 @@
+{#
+ # Links tab of a SIM card (form_mode 'simcard') or of an asset (form_mode 'item').
+ # The datatable renders its own massive actions container: no surrounding form needed.
+ #}
+
+{% if can_edit %}
+    <form method="post" action="{{ form_url }}" class="mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    {{ form_mode == 'simcard' ? __('Connect a Device', 'simcard') : __('Connect SIM cards', 'simcard') }}
+                </h3>
+            </div>
+            <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                {% if form_mode == 'simcard' %}
+                    <input type="hidden" name="plugin_simcard_simcards_id" value="{{ simcard.getID() }}">
+                    {% do call('Dropdown::showSelectItemFromItemtypes', [{
+                        'itemtypes': classes,
+                        'entity_restrict': entity_restrict,
+                    }]) %}
+                {% else %}
+                    <input type="hidden" name="items_id" value="{{ item.getID() }}">
+                    <input type="hidden" name="itemtype" value="{{ item.getType() }}">
+                    <div class="flex-grow-1">
+                        {% do call('Dropdown::show', [simcard_itemtype, {
+                            'name': 'plugin_simcard_simcards_id',
+                            'entity': entity_restrict,
+                            'used': used_simcards,
+                        }]) %}
+                    </div>
+                {% endif %}
+                <button type="submit" name="additem" value="1" class="btn btn-primary">
+                    <i class="ti ti-plug" aria-hidden="true"></i>
+                    <span>{{ _x('button', 'Connect') }}</span>
+                </button>
+            </div>
+        </div>
+    </form>
+{% endif %}
+
+{% if datatable.entries|length > 0 %}
+    {% include 'components/datatable.html.twig' with datatable only %}
+{% else %}
+    <div class="alert alert-info">{{ __('Not connected') }}</div>
+{% endif %}
