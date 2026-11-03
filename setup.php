@@ -64,7 +64,7 @@ define('PLUGIN_SIMCARD_LEGACY_CLASSES', [
 // Lazily alias a legacy class name to its namespaced replacement on first use
 spl_autoload_register(static function (string $class): void {
     $legacy_classes = PLUGIN_SIMCARD_LEGACY_CLASSES;
-    if (isset($legacy_classes[$class])) {
+    if (isset($legacy_classes[$class]) && class_exists($legacy_classes[$class])) {
         class_alias($legacy_classes[$class], $class);
     }
 });

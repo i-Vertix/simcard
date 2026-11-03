@@ -5,7 +5,7 @@ equipment, and manage them with tickets, contracts, infocoms, documents and rese
 
 Original author: [GitHub Repository](https://github.com/pluginsGLPI/simcard)
 
-Maintained by [i-Vertix](https://github.com/ivertix-dev/simcard).
+Maintained by [i-Vertix](https://github.com/i-Vertix/simcard).
 
 ## Compatibility
 
@@ -18,7 +18,7 @@ Older versions are not supported.
 
 ## Installation
 
-1. Download the release matching your GLPI version from [https://github.com/ivertix-dev/simcard/releases](https://github.com/ivertix-dev/simcard/releases).
+1. Download the release matching your GLPI version from [https://github.com/i-Vertix/simcard/releases](https://github.com/i-Vertix/simcard/releases).
 2. Extract the archive into `glpi/plugins/simcard`.
 3. In *Setup > Plugins* install and activate simcard.
 4. If necessary, configure the rights for users *(Administration > Profiles)*.
@@ -37,6 +37,9 @@ Important:
 - PIN/PUK are encrypted with the GLPI key. They are no longer searchable and no longer part of Data Injection mappings.
 - Do not change the GLPI security key (`security:change_key`) while simcard is inactive, otherwise the PIN/PUK
   codes become unreadable. Activate the plugin first.
+- History rows written by 1.x are not changed by the upgrade: they keep the plaintext PIN/PUK values and remain
+  visible to every user with read access to the item history. Administrators who need to remove them must clean
+  `glpi_logs` themselves.
 
 See [CHANGELOG.md](CHANGELOG.md) for details.
 

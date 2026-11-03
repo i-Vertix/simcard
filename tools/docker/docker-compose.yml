@@ -23,7 +23,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8012:80"
+      - "127.0.0.1:8012:80"
     environment: &glpi-env
       GLPI_DB_HOST: db
       GLPI_DB_PORT: "3306"
@@ -44,7 +44,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8011:80"
+      - "127.0.0.1:8011:80"
     environment: *glpi-env
     volumes:
       - glpi-data:/var/glpi

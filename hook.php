@@ -125,7 +125,7 @@ function plugin_simcard_getDropdown(): array
 function plugin_simcard_AssignToTicket(array $types): array
 {
     if (Session::haveRight(Profile::RIGHT_SIMCARD_SIMCARD, Profile::SIMCARD_ASSOCIATE_TICKET)) {
-        $types[Simcard::class] = 'SIM Cards';
+        $types[Simcard::class] = Simcard::getTypeName(Session::getPluralNumber());
     }
 
     return $types;

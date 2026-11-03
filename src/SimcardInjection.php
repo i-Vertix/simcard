@@ -35,6 +35,11 @@ use PluginDatainjectionCommonInjectionLib;
 use PluginDatainjectionInjectionInterface;
 use Search;
 
+// Data Injection is optional: without it the interface does not exist and the class must not be declared
+if (!interface_exists(PluginDatainjectionInjectionInterface::class)) {
+    return;
+}
+
 /// class SimcardInjection
 class SimcardInjection extends Simcard implements PluginDatainjectionInjectionInterface
 {

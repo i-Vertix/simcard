@@ -27,7 +27,7 @@ Prefix such commands with `MSYS_NO_PATHCONV=1` (or `export MSYS_NO_PATHCONV=1`).
 
     $dc up -d glpi12
     $dc exec glpi12 php bin/console --version
-    # http://localhost:8012
+    # http://127.0.0.1:8012 (ports are bound to 127.0.0.1 only)
     $dc exec glpi12 php bin/console plugin:install simcard -u glpi
     $dc exec glpi12 php bin/console plugin:activate simcard
 
@@ -40,7 +40,7 @@ Prefix such commands with `MSYS_NO_PATHCONV=1` (or `export MSYS_NO_PATHCONV=1`).
     $dc --profile legacy up -d glpi11
     $dc exec glpi11 php bin/console plugin:install simcard -u glpi
     $dc exec glpi11 php bin/console plugin:activate simcard
-    # http://localhost:8011 : create test data (SIM cards, links to items, ...)
+    # http://127.0.0.1:8011 : create test data (SIM cards, links to items, ...)
     $dc --profile legacy stop glpi11
     $dc up -d glpi12
     $dc exec glpi12 php bin/console db:update

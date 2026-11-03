@@ -12,11 +12,15 @@
   Upgrading migrates the itemtypes stored in the database (tickets, logs, documents, infocoms, display
   preferences, saved searches, reservations, profile `helpdesk_item_type`, ...) automatically.
 - The SIM card form and the links tab are rendered with Twig.
-- Install, upgrade and uninstall are handled by the `Install` class with versioned migration steps.
+- Install, upgrade and uninstall are handled by the `Install` class. The upgrade steps are not versioned: they run
+  on every update and are idempotent. The one-time PIN/PUK encryption is guarded by the config marker
+  `plugin:simcard/secrets_encrypted`.
 - PIN 1/2 and PUK 1/2 are encrypted with the GLPI key (`GLPIKey`) and existing values are encrypted during the upgrade.
   They are no longer searchable, are no longer available in Data Injection mappings, and their values are no
   longer written to the item history. An empty field on the form keeps the stored code, the "Clear" checkbox empties it.
-  History rows created by 1.x may still contain plaintext PIN/PUK values; they are deliberately left unchanged.
+  History rows written by 1.x are left unchanged: they keep the plaintext PIN/PUK values and remain visible to
+  every user with read access to the item history. Administrators who need to remove them must clean `glpi_logs`
+  themselves.
 
 ### Fixed
 
@@ -26,7 +30,8 @@
 - P3: `front/simcard_item.form.php` failed with a fatal error on an unknown action; it now answers with a bad request.
 - P4: XSS / broken values with apostrophes in the form; fields are now escaped by the Twig field macros.
 - P5: missing rights check when displaying `front/simcard.form.php`.
-- P6: PIN/PUK stored in plaintext in the database and in the history.
+- P6: PIN/PUK stored in plaintext in the database and written to the history. New history rows no longer contain
+  them; history rows written by 1.x still do (see above).
 - P7: every upgrade ran `ALTER TABLE ... ENGINE=InnoDB` on all tables.
 - P8: signature incompatibilities with GLPI 12 (native types of `CommonGLPI`/`CommonDBTM` methods, changed DB helper signatures).
 - P9: dead or broken hooks (`headings*`, `migratetypes` with a wrong class name, `csrf_compliant`).

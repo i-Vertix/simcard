@@ -160,12 +160,20 @@ class Simcard extends CommonDBTM
             }
         }
 
+        // PIN and PUK codes are highly sensitive. A brand-new empty item needs the create right; an existing item
+        // and a creation from a template (codes copied from the template) need the update right on that very item
+        // (profile right, entity, ITEM_CAN hooks).
+        if (static::isNewID((int) $ID) && (int) ($options['withtemplate'] ?? 0) !== 2) {
+            $can_see_secrets = self::canCreate();
+        } else {
+            $can_see_secrets = $this->can((int) $ID, UPDATE);
+        }
+
         TemplateRenderer::getInstance()->display('@simcard/simcard.html.twig', [
             'item'            => $this,
             'params'          => $options,
             'linked_item'     => $linked_item,
-            // PIN and PUK codes are highly sensitive: only for users who can write this very item (entity-aware)
-            'can_see_secrets' => static::isNewID((int) $ID) ? self::canCreate() : $this->canUpdateItem(),
+            'can_see_secrets' => $can_see_secrets,
         ]);
 
         return true;
@@ -457,16 +465,6 @@ class Simcard extends CommonDBTM
             'datatype' => 'dropdown'
         ];
 
-        $tab[] = [
-            'id' => '90',
-            'table' => self::getTable(),
-            'field' => 'notepad',
-            'name' => __('Notes'),
-            'linkfield' => 'notepad',
-            'datatype' => 'text',
-            'massiveaction' => false
-        ];
-
         $tab = array_merge($tab, Location::rawSearchOptionsToAdd());
         $tab = array_merge($tab, Notepad::rawSearchOptionsToAdd());
 
@@ -573,7 +571,7 @@ class Simcard extends CommonDBTM
         $isadmin = static::canUpdate();
         $actions = parent::getSpecificMassiveActions($checkitem);
 
-        if ($_SESSION['glpiactiveprofile']['interface'] === 'central') {
+        if (Session::getCurrentInterface() === 'central') {
             if ($isadmin) {
                 if (Session::haveRight('transfer', READ) && Session::isMultiEntitiesMode()) {
                     $actions[self::class . MassiveAction::CLASS_ACTION_SEPARATOR . 'transfer'] = __('Transfer');
@@ -607,6 +605,12 @@ class Simcard extends CommonDBTM
                 $input = $ma->getInput();
                 $entity = (int) $input['entities_id'];
                 if ($item instanceof self) {
+                    if (!Session::haveAccessToEntity($entity)) {
+                        foreach ($ids as $key) {
+                            $ma->itemDone($item->getType(), $key, MassiveAction::ACTION_NORIGHT);
+                        }
+                        return;
+                    }
                     $dropdowns = [
                         'plugin_simcard_simcardtypes_id'    => SimcardType::class,
                         'plugin_simcard_simcardsizes_id'    => SimcardSize::class,
@@ -627,6 +631,14 @@ class Simcard extends CommonDBTM
                         }
 
                         if ($item->update($values)) {
+                            // Keep the financial information in the same entity as the SIM card
+                            $infocom = new Infocom();
+                            if ($infocom->getFromDBforDevice(self::class, (int) $key)) {
+                                $infocom->update([
+                                    'id'          => $infocom->getID(),
+                                    'entities_id' => $entity,
+                                ]);
+                            }
                             $ma->itemDone($item->getType(), $key, MassiveAction::ACTION_OK);
                         } else {
                             $ma->itemDone($item->getType(), $key, MassiveAction::ACTION_KO);
