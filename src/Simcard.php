@@ -36,7 +36,7 @@ use CommonGLPI;
 use Contract_Item;
 use Document_Item;
 use Dropdown;
-use Group;
+use Glpi\Application\View\TemplateRenderer;
 use Html;
 use Infocom;
 use Item_Problem;
@@ -46,7 +46,6 @@ use Log;
 use MassiveAction;
 use Notepad;
 use Session;
-use User;
 
 /// Class Simcard
 class Simcard extends CommonDBTM
@@ -130,168 +129,31 @@ class Simcard extends CommonDBTM
             return false;
         }
 
-        $this->showFormHeader($options);
+        $this->initForm($ID, $options);
 
+        // Optional element the new SIM card will be linked to after creation
+        $linked_item = null;
+        $itemtype = $options['linked_itemtype'] ?? null;
+        $items_id = (int) ($options['linked_items_id'] ?? 0);
         if (
-            isset($options['itemtype'], $options['items_id'])
-            && is_string($options['itemtype'])
-            && in_array($options['itemtype'], Simcard_Item::getClasses(), true)
+            static::isNewID((int) $ID)
+            && is_string($itemtype)
+            && in_array($itemtype, Simcard_Item::getClasses(), true)
+            && is_a($itemtype, CommonDBTM::class, true)
         ) {
-            echo "<tr class='tab_bg_1'>";
-            echo "<td>" . __s('Associated element') . "</td>";
-            echo "<td>";
-            $item = new $options['itemtype']();
-            $item->getFromDB((int) $options['items_id']);
-            echo $item->getLink();
-            echo "</td>";
-            echo "<td colspan='2'></td></tr>\n";
-            echo "<input type='hidden' name='_itemtype' value='" . htmlescape($options['itemtype']) . "'>";
-            echo "<input type='hidden' name='_items_id' value='" . (int) $options['items_id'] . "'>";
-        }
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Name') . "</td>";
-        echo "<td>";
-        echo "<input type='text' id='name' class='form-control' name='name' value='" . htmlescape($this->fields['name']) . "' />";
-        echo "</td>";
-        echo "<td>" . __s('Status') . "</td>";
-        echo "<td>";
-        Dropdown::show('State', ['value' => $this->fields['states_id']]);
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Location') . "</td>";
-        echo "<td>";
-        Dropdown::show('Location', [
-            'value'  => $this->fields['locations_id'],
-            'entity' => $this->fields['entities_id'],
-        ]);
-        echo "</td>";
-        echo "<td>" . __s('Type of SIM card', 'simcard') . "</td>";
-        echo "<td>";
-        Dropdown::show(
-            SimcardType::class,
-            ['value' => $this->fields['plugin_simcard_simcardtypes_id']]
-        );
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Technician in charge of the hardware') . "</td>";
-        echo "<td>";
-        User::dropdown([
-            'name'   => 'users_id_tech',
-            'value'  => $this->fields['users_id_tech'],
-            'right'  => 'own_ticket',
-            'entity' => $this->fields['entities_id'],
-            'rand'   => mt_rand(),
-        ]);
-        echo "</td>";
-        echo "<td>" . __s('Size', 'simcard') . "</td>";
-        echo "<td>";
-        Dropdown::show(
-            SimcardSize::class,
-            ['value' => $this->fields['plugin_simcard_simcardsizes_id']]
-        );
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Group in charge of the hardware') . "</td>";
-        echo "<td>";
-        Group::dropdown([
-            'name'      => 'groups_id_tech',
-            'value'     => $this->fields['groups_id_tech'],
-            'entity'    => $this->fields['entities_id'],
-            'condition' => ['is_assign' => 1],
-            'rand'      => mt_rand(),
-        ]);
-        echo "</td>";
-
-        echo "<td>" . __s('Voltage', 'simcard') . "</td>";
-        echo "<td>";
-        Dropdown::show(
-            SimcardVoltage::class,
-            ['value' => $this->fields['plugin_simcard_simcardvoltages_id']]
-        );
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Provider', 'simcard') . "</td>";
-        echo "<td>";
-        Dropdown::show(
-            PhoneOperator::class,
-            ['value' => $this->fields['plugin_simcard_phoneoperators_id']]
-        );
-        echo "</td>";
-
-        echo "<td>" . __s('Associable items to a ticket') . "&nbsp;:</td><td>";
-        Dropdown::showYesNo('is_helpdesk_visible', $this->fields['is_helpdesk_visible']);
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('User') . "</td>";
-        echo "<td>";
-        User::dropdown([
-            'name'   => 'users_id',
-            'value'  => $this->fields['users_id'],
-            'right'  => 'all',
-            'entity' => $this->fields['entities_id'],
-            'rand'   => mt_rand(),
-        ]);
-        echo "</td>";
-
-        echo "<input type='hidden' name='is_global' value='1'>";
-
-        echo "<td>" . __s('Inventory number') . "</td>";
-        echo "<td>";
-        echo "<input type='text' id='otherserial' class='form-control' name='otherserial' value='" . htmlescape($this->fields['otherserial']) . "' />";
-        echo "</td></tr>\n";
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Group') . "</td>";
-        echo "<td>";
-        Group::dropdown([
-            'name'      => 'groups_id',
-            'value'     => $this->fields['groups_id'],
-            'entity'    => $this->fields['entities_id'],
-            'condition' => ['is_assign' => 1],
-            'rand'      => mt_rand(),
-        ]);
-
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('Phone number', 'simcard') . "</td>";
-        echo "<td>";
-        echo "<input type='text' id='phonenumber' class='form-control' name='phonenumber' value='" . htmlescape($this->fields['phonenumber']) . "' />";
-        echo "</td>";
-        echo "<td rowspan='6'>" . __s('Comments') . "</td>";
-        echo "<td rowspan='6' class='middle'>";
-        echo "<textarea cols='45' rows='15' name='comment' >" . htmlescape($this->fields['comment'] ?? '') . "</textarea>";
-        echo "</td></tr>\n";
-
-        echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __s('IMSI', 'simcard') . "</td>";
-        echo "<td>";
-        echo "<input type='text' id='serial' class='form-control' name='serial' value='" . htmlescape($this->fields['serial']) . "' />";
-        echo "</td></tr>\n";
-
-        // Only show PIN and PUK code to users who can write (these informations are highly sensitive)
-        if (self::canUpdate()) {
-            $pin_puk_labels = [
-                'pin'  => __s('Pin 1', 'simcard'),
-                'pin2' => __s('Pin 2', 'simcard'),
-                'puk'  => __s('Puk 1', 'simcard'),
-                'puk2' => __s('Puk 2', 'simcard'),
-            ];
-            foreach ($pin_puk_labels as $field => $label) {
-                echo "<tr class='tab_bg_1'>";
-                echo "<td>" . $label . "</td>";
-                echo "<td>";
-                echo "<input type='text' id='" . $field . "' class='form-control' name='" . $field . "' value='" . htmlescape($this->fields[$field]) . "' />";
-                echo "</td></tr>\n";
+            $candidate = new $itemtype();
+            if ($candidate->getFromDB($items_id)) {
+                $linked_item = $candidate;
             }
         }
 
-        $this->showFormButtons($options);
+        TemplateRenderer::getInstance()->display('@simcard/simcard.html.twig', [
+            'item'            => $this,
+            'params'          => $options,
+            'linked_item'     => $linked_item,
+            // PIN and PUK codes are highly sensitive: only for users who can write
+            'can_see_secrets' => self::canUpdate(),
+        ]);
 
         return true;
     }

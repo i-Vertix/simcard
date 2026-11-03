@@ -62,7 +62,7 @@ if (isset($_POST['add'])) {
     }
     $simcard->redirectToList();
 } elseif (isset($_POST['restore'])) {
-    $simcard->check($_POST['id'], PURGE);
+    $simcard->check($_POST['id'], DELETE);
     if ($simcard->restore($_POST)) {
         Event::log(
             $_POST['id'],
@@ -104,7 +104,12 @@ if (isset($_POST['add'])) {
     // Print simcard information
     Simcard::displayFullPageForItem(
         $_GET['id'] ?? 0,
-        Simcard::getSectorizedDetails(),
-        ['withtemplate' => $_GET['withtemplate'] ?? '']
+        ['assets', Simcard::class],
+        [
+            'withtemplate'    => $_GET['withtemplate'] ?? '',
+            // $_GET['_itemtype'] is overwritten by the tab loader, so the link target is forwarded under other keys
+            'linked_itemtype' => $_GET['_itemtype'] ?? '',
+            'linked_items_id' => $_GET['_items_id'] ?? 0,
+        ]
     );
 }

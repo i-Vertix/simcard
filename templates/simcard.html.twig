@@ -1,0 +1,167 @@
+{#
+ # Main form of a SIM card.
+ # Overrides the whole `form_fields` block of the generic form, so that the
+ # generic field detection (getFormFields) does not render fields twice.
+ #}
+{% extends 'generic_show_form.html.twig' %}
+{% import 'components/form/fields_macros.html.twig' as fields %}
+
+{% block form_fields %}
+    {% set entity = item.fields['entities_id']|default(-1) %}
+
+    {% if linked_item is not null %}
+        {{ fields.htmlField('', linked_item.getLink(), __('Associated element'), {}) }}
+        {{ fields.hiddenField('_itemtype', linked_item.getType()) }}
+        {{ fields.hiddenField('_items_id', linked_item.getID()) }}
+    {% endif %}
+
+    {{ fields.autoNameField('name', item, __('Name'), withtemplate, field_options) }}
+
+    {{ fields.dropdownField(
+        'State',
+        'states_id',
+        item.fields['states_id'],
+        __('Status'),
+        field_options|merge({'entity': entity})
+    ) }}
+
+    {{ fields.dropdownField(
+        'Location',
+        'locations_id',
+        item.fields['locations_id'],
+        __('Location'),
+        field_options|merge({'entity': entity})
+    ) }}
+
+    {{ fields.dropdownField(
+        'GlpiPlugin\\Simcard\\SimcardType',
+        'plugin_simcard_simcardtypes_id',
+        item.fields['plugin_simcard_simcardtypes_id'],
+        __('Type of SIM card', 'simcard'),
+        field_options
+    ) }}
+
+    {{ fields.dropdownField(
+        'User',
+        'users_id_tech',
+        item.fields['users_id_tech'],
+        __('Technician in charge of the hardware'),
+        field_options|merge({'entity': entity, 'right': 'all'})
+    ) }}
+
+    {{ fields.dropdownField(
+        'GlpiPlugin\\Simcard\\SimcardSize',
+        'plugin_simcard_simcardsizes_id',
+        item.fields['plugin_simcard_simcardsizes_id'],
+        __('Size', 'simcard'),
+        field_options
+    ) }}
+
+    {{ fields.dropdownField(
+        'Group',
+        'groups_id_tech',
+        item.fields['groups_id_tech'],
+        __('Group in charge of the hardware'),
+        field_options|merge({'entity': entity, 'condition': {'is_assign': 1}})
+    ) }}
+
+    {{ fields.dropdownField(
+        'GlpiPlugin\\Simcard\\SimcardVoltage',
+        'plugin_simcard_simcardvoltages_id',
+        item.fields['plugin_simcard_simcardvoltages_id'],
+        __('Voltage', 'simcard'),
+        field_options
+    ) }}
+
+    {{ fields.dropdownField(
+        'GlpiPlugin\\Simcard\\PhoneOperator',
+        'plugin_simcard_phoneoperators_id',
+        item.fields['plugin_simcard_phoneoperators_id'],
+        __('Provider', 'simcard'),
+        field_options
+    ) }}
+
+    {{ fields.dropdownYesNo(
+        'is_helpdesk_visible',
+        item.fields['is_helpdesk_visible'],
+        __('Associable items to a ticket'),
+        field_options
+    ) }}
+
+    {{ fields.dropdownField(
+        'User',
+        'users_id',
+        item.fields['users_id'],
+        __('User'),
+        field_options|merge({'entity': entity, 'right': 'all'})
+    ) }}
+
+    {{ fields.hiddenField('is_global', 1) }}
+
+    {{ fields.textField(
+        'otherserial',
+        item.fields['otherserial'],
+        __('Inventory number'),
+        field_options
+    ) }}
+
+    {{ fields.dropdownField(
+        'Group',
+        'groups_id',
+        item.fields['groups_id'],
+        __('Group'),
+        field_options|merge({'entity': entity})
+    ) }}
+
+    {{ fields.textField(
+        'phonenumber',
+        item.fields['phonenumber'],
+        __('Phone number', 'simcard'),
+        field_options
+    ) }}
+
+    {{ fields.textField(
+        'serial',
+        item.fields['serial'],
+        __('IMSI', 'simcard'),
+        field_options
+    ) }}
+
+    {{ fields.textareaField(
+        'comment',
+        item.fields['comment'],
+        __('Comments'),
+        field_options
+    ) }}
+
+    {# PIN and PUK codes are highly sensitive: only shown to users who can update SIM cards #}
+    {% if can_see_secrets %}
+        {{ fields.passwordField(
+            'pin',
+            item.fields['pin'],
+            __('Pin 1', 'simcard'),
+            field_options|merge({'is_disclosable': true, 'clearable': false})
+        ) }}
+
+        {{ fields.passwordField(
+            'puk',
+            item.fields['puk'],
+            __('Puk 1', 'simcard'),
+            field_options|merge({'is_disclosable': true, 'clearable': false})
+        ) }}
+
+        {{ fields.passwordField(
+            'pin2',
+            item.fields['pin2'],
+            __('Pin 2', 'simcard'),
+            field_options|merge({'is_disclosable': true, 'clearable': false})
+        ) }}
+
+        {{ fields.passwordField(
+            'puk2',
+            item.fields['puk2'],
+            __('Puk 2', 'simcard'),
+            field_options|merge({'is_disclosable': true, 'clearable': false})
+        ) }}
+    {% endif %}
+{% endblock %}
