@@ -63,6 +63,9 @@ class Simcard extends CommonDBTM
     // Never write PIN and PUK codes (even encrypted) to the history
     public array $history_blacklist = self::SECRET_FIELDS;
 
+    // Never expose PIN and PUK codes (even encrypted) through the APIs
+    public static array $undisclosedFields = self::SECRET_FIELDS;
+
     public static string $rightname = Profile::RIGHT_SIMCARD_SIMCARD;
     protected bool $usenotepad = true;
 
@@ -161,8 +164,8 @@ class Simcard extends CommonDBTM
             'item'            => $this,
             'params'          => $options,
             'linked_item'     => $linked_item,
-            // PIN and PUK codes are highly sensitive: only for users who can write
-            'can_see_secrets' => self::canUpdate(),
+            // PIN and PUK codes are highly sensitive: only for users who can write this very item (entity-aware)
+            'can_see_secrets' => static::isNewID((int) $ID) ? self::canCreate() : $this->canUpdateItem(),
         ]);
 
         return true;

@@ -307,7 +307,12 @@ final class Install
                 $values[$field] = $encrypted;
             }
             // Direct update: no history entry
-            $DB->update(self::TABLE_SIMCARDS, $values, ['id' => $row['id']]);
+            if (!$DB->update(self::TABLE_SIMCARDS, $values, ['id' => $row['id']])) {
+                throw new RuntimeException(sprintf(
+                    'Unable to store the encrypted PIN and PUK codes of SIM card %d.',
+                    $row['id']
+                ));
+            }
         }
 
         // Installs upgraded from 1.x have indexes on the codes (no-op when absent)
@@ -380,8 +385,6 @@ final class Install
             }
         }
 
-        Config::deleteConfigurationValues(self::CONFIG_CONTEXT, [self::CONFIG_SECRETS_ENCRYPTED]);
-
         \ProfileRight::deleteProfileRights([Profile::RIGHT_SIMCARD_SIMCARD]);
         unset($_SESSION['glpiactiveprofile'][Profile::RIGHT_SIMCARD_SIMCARD]);
 
@@ -422,5 +425,8 @@ final class Install
                 $migration->dropTable($table);
             }
         }
+
+        // Last: a failed uninstall must not lose the information that the codes are encrypted
+        Config::deleteConfigurationValues(self::CONFIG_CONTEXT, [self::CONFIG_SECRETS_ENCRYPTED]);
     }
 }
