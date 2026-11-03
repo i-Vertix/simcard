@@ -37,8 +37,10 @@ use Contract_Item;
 use Document_Item;
 use Dropdown;
 use Glpi\Application\View\TemplateRenderer;
+use GLPIKey;
 use Html;
 use Infocom;
+use InvalidArgumentException;
 use Item_Problem;
 use Item_Ticket;
 use Location;
@@ -52,6 +54,14 @@ class Simcard extends CommonDBTM
 {
     // From CommonDBTM
     public bool $dohistory = true;
+
+    /**
+     * PIN and PUK codes, stored encrypted with the GLPI security key.
+     */
+    public const SECRET_FIELDS = ['pin', 'pin2', 'puk', 'puk2'];
+
+    // Never write PIN and PUK codes (even encrypted) to the history
+    public array $history_blacklist = self::SECRET_FIELDS;
 
     public static string $rightname = Profile::RIGHT_SIMCARD_SIMCARD;
     protected bool $usenotepad = true;
@@ -171,7 +181,88 @@ class Simcard extends CommonDBTM
         unset($input['id']);
         unset($input['withtemplate']);
 
+        return $this->prepareSecretsInput($input, true);
+    }
+
+    public function prepareInputForUpdate($input)
+    {
+        return $this->prepareSecretsInput($input, false);
+    }
+
+    /**
+     * Encrypt the PIN and PUK codes of an add or update input.
+     *
+     * - `_clear_<field>` set: the code is emptied;
+     * - non-empty value: the code is encrypted;
+     * - empty value on update: the stored code is left unchanged.
+     *
+     * @param array $input
+     * @param bool  $is_add
+     *
+     * @return array|false
+     */
+    private function prepareSecretsInput(array $input, bool $is_add)
+    {
+        $glpikey = new GLPIKey();
+
+        foreach (self::SECRET_FIELDS as $field) {
+            if (!empty($input['_clear_' . $field])) {
+                $input[$field] = '';
+                continue;
+            }
+            if (!array_key_exists($field, $input)) {
+                continue;
+            }
+
+            $value = (string) $input[$field];
+            if ($value === '') {
+                if (!$is_add) {
+                    // Empty field on update means "unchanged"
+                    unset($input[$field]);
+                }
+                continue;
+            }
+
+            if (!$is_add && $value === $this->getDecryptedSecret($field)) {
+                // Unchanged: avoid rewriting it with a new nonce
+                unset($input[$field]);
+                continue;
+            }
+
+            $encrypted = $glpikey->encrypt($value);
+            if ($encrypted === '') {
+                Session::addMessageAfterRedirect(
+                    __s('Unable to encrypt the PIN and PUK codes: check the GLPI security key (glpicrypt.key).', 'simcard'),
+                    false,
+                    ERROR
+                );
+                return false;
+            }
+            $input[$field] = $encrypted;
+        }
+
         return $input;
+    }
+
+    /**
+     * Get the decrypted value of a PIN or PUK code of the loaded SIM card.
+     *
+     * @param string $field One of self::SECRET_FIELDS
+     *
+     * @return string Empty string if the code is not set
+     */
+    public function getDecryptedSecret(string $field): string
+    {
+        if (!in_array($field, self::SECRET_FIELDS, true)) {
+            throw new InvalidArgumentException(sprintf('Invalid secret field "%s".', $field));
+        }
+
+        $value = (string) ($this->fields[$field] ?? '');
+        if ($value === '') {
+            return '';
+        }
+
+        return (string) (new GLPIKey())->decrypt($value);
     }
 
     public function post_addItem()
@@ -318,44 +409,6 @@ class Simcard extends CommonDBTM
             'datatype' => 'string',
             'massiveaction' => false
         ];
-
-        if (self::canUpdate()) {
-            $tab[] = [
-                'id' => '413',
-                'table' => self::getTable(),
-                'field' => 'pin',
-                'name' => __('Pin 1', 'simcard'),
-                'datatype' => 'string',
-                'massiveaction' => false
-            ];
-
-            $tab[] = [
-                'id' => '414',
-                'table' => self::getTable(),
-                'field' => 'puk',
-                'name' => __('Puk 1', 'simcard'),
-                'datatype' => 'string',
-                'massiveaction' => false
-            ];
-
-            $tab[] = [
-                'id' => '415',
-                'table' => self::getTable(),
-                'field' => 'pin2',
-                'name' => __('Pin 2', 'simcard'),
-                'datatype' => 'string',
-                'massiveaction' => false
-            ];
-
-            $tab[] = [
-                'id' => '416',
-                'table' => self::getTable(),
-                'field' => 'puk2',
-                'name' => __('Puk 2', 'simcard'),
-                'datatype' => 'string',
-                'massiveaction' => false
-            ];
-        }
 
         $tab[] = [
             'id' => '31',

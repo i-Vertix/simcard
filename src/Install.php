@@ -31,6 +31,7 @@
 
 namespace GlpiPlugin\Simcard;
 
+use Config;
 use Contract_Item;
 use DBConnection;
 use DisplayPreference;
@@ -38,6 +39,7 @@ use Document_Item;
 use DropdownTranslation;
 use Fieldblacklist;
 use FieldUnicity;
+use GLPIKey;
 use Infocom;
 use Item_Problem;
 use Item_Ticket;
@@ -47,7 +49,9 @@ use NetworkPort;
 use Notepad;
 use Plugin;
 use ReservationItem;
+use RuntimeException;
 use SavedSearch;
+use Throwable;
 
 /**
  * Install, upgrade and uninstall of the plugin.
@@ -63,10 +67,36 @@ final class Install
         'glpi_plugin_simcard_phoneoperators',
     ];
 
+    private const CONFIG_CONTEXT = 'plugin:simcard';
+    // Set once the PIN and PUK codes are stored encrypted (fresh install, or upgrade done)
+    private const CONFIG_SECRETS_ENCRYPTED = 'secrets_encrypted';
+
     /**
      * Fresh installation.
      */
     public static function install(Migration $migration): void
+    {
+        self::createSchema();
+
+        $migration->updateDisplayPrefs([
+            Simcard::class => [1, 412, 80, 411, 410],
+        ], [], true);
+
+        // Fresh tables: PIN and PUK codes are encrypted from the start
+        self::markSecretsEncrypted();
+
+        // No session (and therefore no active profile) when installed with bin/console:
+        // in that case no profile gets the right until an administrator grants it.
+        if (isset($_SESSION['glpiactiveprofile']['id'])) {
+            Profile::createFirstAccess((int) $_SESSION['glpiactiveprofile']['id']);
+        }
+    }
+
+    /**
+     * Create the missing tables and seed the default dropdown values.
+     * Idempotent: also run on upgrade, to complete a partially failed fresh install.
+     */
+    private static function createSchema(): void
     {
         global $DB;
 
@@ -160,16 +190,6 @@ final class Install
                 }
             }
         }
-
-        $migration->updateDisplayPrefs([
-            Simcard::class => [1, 412, 80, 411, 410],
-        ], [], true);
-
-        // No session (and therefore no active profile) when installed with bin/console:
-        // in that case no profile gets the right until an administrator grants it.
-        if (isset($_SESSION['glpiactiveprofile']['id'])) {
-            Profile::createFirstAccess((int) $_SESSION['glpiactiveprofile']['id']);
-        }
     }
 
     /**
@@ -180,6 +200,9 @@ final class Install
     public static function upgrade(Migration $migration, string $from): void
     {
         global $DB;
+
+        // 0. A partially failed fresh install is routed here too: complete it
+        self::createSchema();
 
         // 1. Class names were namespaced in 2.0.0: rewrite stored itemtypes
         foreach (PLUGIN_SIMCARD_LEGACY_CLASSES as $old => $new) {
@@ -223,6 +246,89 @@ final class Install
                 'nodefault' => true,
             ]);
         }
+
+        // 5. PIN and PUK codes were stored in plain text before 2.0.0.
+        // Gated on a persistent marker rather than on $from, so that they are never encrypted twice.
+        if (!self::areSecretsEncrypted()) {
+            $DB->beginTransaction();
+            try {
+                self::encryptSecrets($migration);
+                self::markSecretsEncrypted();
+                $DB->commit();
+            } catch (Throwable $e) {
+                $DB->rollBack();
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * Encrypt the plain text PIN and PUK codes with the GLPI security key.
+     *
+     * Must only run once, see self::areSecretsEncrypted().
+     */
+    private static function encryptSecrets(Migration $migration): void
+    {
+        global $DB;
+
+        $glpikey = new GLPIKey();
+        // hasReadErrors() first: get() emits a PHP warning when the file is missing
+        if ($glpikey->hasReadErrors() || $glpikey->get() === null) {
+            throw new RuntimeException(
+                'Unable to read the GLPI security key (glpicrypt.key) in the GLPI configuration directory: '
+                . 'it is required to encrypt the PIN and PUK codes of the SIM cards. '
+                . 'Restore the key file (or create one with "php bin/console security:change_key") and run the upgrade again.'
+            );
+        }
+
+        $not_empty = [];
+        foreach (Simcard::SECRET_FIELDS as $field) {
+            $not_empty[] = [$field => ['<>', '']];
+        }
+        $iterator = $DB->request([
+            'SELECT' => array_merge(['id'], Simcard::SECRET_FIELDS),
+            'FROM'   => self::TABLE_SIMCARDS,
+            'WHERE'  => ['OR' => $not_empty],
+        ]);
+        foreach ($iterator as $row) {
+            $values = [];
+            foreach (Simcard::SECRET_FIELDS as $field) {
+                $value = (string) $row[$field];
+                if ($value === '') {
+                    continue;
+                }
+                $encrypted = $glpikey->encrypt($value);
+                if ($encrypted === '') {
+                    throw new RuntimeException(sprintf(
+                        'Unable to encrypt the PIN and PUK codes of SIM card %d with the GLPI security key (glpicrypt.key).',
+                        $row['id']
+                    ));
+                }
+                $values[$field] = $encrypted;
+            }
+            // Direct update: no history entry
+            $DB->update(self::TABLE_SIMCARDS, $values, ['id' => $row['id']]);
+        }
+
+        // Installs upgraded from 1.x have indexes on the codes (no-op when absent)
+        foreach (Simcard::SECRET_FIELDS as $field) {
+            $migration->dropKey(self::TABLE_SIMCARDS, $field);
+        }
+
+        // Search options 413-416 (PIN and PUK codes) were removed
+        $migration->updateDisplayPrefs([], [Simcard::class => [413, 414, 415, 416]]);
+    }
+
+    private static function areSecretsEncrypted(): bool
+    {
+        $values = Config::getConfigurationValues(self::CONFIG_CONTEXT, [self::CONFIG_SECRETS_ENCRYPTED]);
+
+        return !empty($values[self::CONFIG_SECRETS_ENCRYPTED]);
+    }
+
+    private static function markSecretsEncrypted(): void
+    {
+        Config::setConfigurationValues(self::CONFIG_CONTEXT, [self::CONFIG_SECRETS_ENCRYPTED => 1]);
     }
 
     /**
@@ -273,6 +379,8 @@ final class Install
                 $item->deleteByCriteria(['itemtype' => $itemtype], true, false);
             }
         }
+
+        Config::deleteConfigurationValues(self::CONFIG_CONTEXT, [self::CONFIG_SECRETS_ENCRYPTED]);
 
         \ProfileRight::deleteProfileRights([Profile::RIGHT_SIMCARD_SIMCARD]);
         unset($_SESSION['glpiactiveprofile'][Profile::RIGHT_SIMCARD_SIMCARD]);

@@ -82,6 +82,14 @@ function plugin_init_simcard(): void
 
     $PLUGIN_HOOKS[Hooks::ASSIGN_TO_TICKET]['simcard'] = true;
 
+    // PIN and PUK codes are encrypted with the GLPI key: re-encrypted by GLPI on key change
+    $PLUGIN_HOOKS[Hooks::SECURED_FIELDS]['simcard'] = [
+        'glpi_plugin_simcard_simcards.pin',
+        'glpi_plugin_simcard_simcards.pin2',
+        'glpi_plugin_simcard_simcards.puk',
+        'glpi_plugin_simcard_simcards.puk2',
+    ];
+
     $PLUGIN_HOOKS['plugin_datainjection_populate']['simcard'] = 'plugin_datainjection_populate_simcard';
 
     $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['simcard'] = [];

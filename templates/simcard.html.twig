@@ -115,7 +115,7 @@
         'groups_id',
         item.fields['groups_id'],
         __('Group'),
-        field_options|merge({'entity': entity, 'condition': {'is_assign': 1}})
+        field_options|merge({'entity': entity, 'condition': {'is_itemgroup': 1}})
     ) }}
 
     {{ fields.textField(
@@ -139,34 +139,34 @@
         field_options
     ) }}
 
-    {# PIN and PUK codes are highly sensitive: only shown to users who can update SIM cards #}
+    {# PIN and PUK codes are highly sensitive: only shown to users who can update SIM cards.
+     # They are stored encrypted; an empty input keeps the stored code, "Clear" empties it. #}
     {% if can_see_secrets %}
-        {{ fields.passwordField(
-            'pin',
-            item.fields['pin'],
-            __('Pin 1', 'simcard'),
-            field_options|merge({'is_disclosable': true, 'clearable': false})
-        ) }}
-
-        {{ fields.passwordField(
-            'puk',
-            item.fields['puk'],
-            __('Puk 1', 'simcard'),
-            field_options|merge({'is_disclosable': true, 'clearable': false})
-        ) }}
-
-        {{ fields.passwordField(
-            'pin2',
-            item.fields['pin2'],
-            __('Pin 2', 'simcard'),
-            field_options|merge({'is_disclosable': true, 'clearable': false})
-        ) }}
-
-        {{ fields.passwordField(
-            'puk2',
-            item.fields['puk2'],
-            __('Puk 2', 'simcard'),
-            field_options|merge({'is_disclosable': true, 'clearable': false})
-        ) }}
+        {% set secrets = {
+            'pin': __('Pin 1', 'simcard'),
+            'puk': __('Puk 1', 'simcard'),
+            'pin2': __('Pin 2', 'simcard'),
+            'puk2': __('Puk 2', 'simcard'),
+        } %}
+        {% for secret, secret_label in secrets %}
+            {% set clear_id = '_clear_' ~ secret ~ '_' ~ random() %}
+            {% set clear_html %}
+                <div class="d-flex align-items-center gap-1 mt-1">
+                    <input type="checkbox" class="form-check-input" name="_clear_{{ secret }}" id="{{ clear_id }}" value="1">
+                    <label class="form-check-label" for="{{ clear_id }}">{{ __('Clear') }}</label>
+                </div>
+            {% endset %}
+            {{ fields.passwordField(
+                secret,
+                item.getDecryptedSecret(secret),
+                secret_label,
+                field_options|merge({
+                    'is_disclosable': true,
+                    'clearable': false,
+                    'additional_attributes': {'autocomplete': 'new-password'},
+                    'add_field_html': clear_html,
+                })
+            ) }}
+        {% endfor %}
     {% endif %}
 {% endblock %}
