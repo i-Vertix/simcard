@@ -1,25 +1,48 @@
-# Simcard Plugin for [GLPI >= 10.0](https://glpi-project.org/)
+# Simcard Plugin for [GLPI](https://glpi-project.org/)
+
+Adds SIM cards as an asset type to GLPI: link them to computers, phones, printers, peripherals and network
+equipment, and manage them with tickets, contracts, infocoms, documents and reservations.
 
 Original author: [GitHub Repository](https://github.com/pluginsGLPI/simcard)
 
-Updated by [PGUM](https://pgum.eu) for GLPI >= 10.0
+Maintained by [i-Vertix](https://github.com/ivertix-dev/simcard).
 
-## Available Versions
+## Compatibility
 
-This plugin got updated and should work with following GLPI major versions:
+| Plugin version | GLPI              | PHP    |
+|----------------|-------------------|--------|
+| 2.0.x          | 12.0.x            | >= 8.3 |
+| 1.3.x          | 10.0.x to 11.0.x  | see GLPI |
 
-* 9.4.x
-* 9.5.x
-* 10.0.x
-
-Older major versions which are not listed here, aren't and won't be supported.
-We will look forward to keep this plugin alive.
+Older versions are not supported.
 
 ## Installation
 
-1. Download the corresponding release file for your installed GLPI version from [https://github.com/ivertix-dev/simcard/releases](https://github.com/ivertix-dev/simcard/releases)
-2. Extract the archive and copy the source files into `glpi/plugins/simcard`
-3. If necessary - configure permissions for users *(Administration -> Profiles)*
+1. Download the release matching your GLPI version from [https://github.com/ivertix-dev/simcard/releases](https://github.com/ivertix-dev/simcard/releases).
+2. Extract the archive into `glpi/plugins/simcard`.
+3. In *Setup > Plugins* install and activate simcard.
+4. If necessary, configure the rights for users *(Administration > Profiles)*.
+
+## Upgrading from 1.3.x (GLPI 11 to GLPI 12)
+
+1. Update the GLPI core to 12 (`bin/console db:update`). simcard 1.3.x is deactivated by the update.
+2. GLPI suspends plugin execution after `db:update`. Run `bin/console plugin:resume_execution` (or the equivalent
+   action in the UI) before updating simcard.
+3. Replace `plugins/simcard` with the 2.0.x files.
+4. Update and activate simcard in *Setup > Plugins* (or `bin/console plugin:install simcard -u <user>` and
+   `bin/console plugin:activate simcard`). Itemtypes are migrated and PIN/PUK codes are encrypted automatically.
+
+Important:
+
+- PIN/PUK are encrypted with the GLPI key. They are no longer searchable and no longer part of Data Injection mappings.
+- Do not change the GLPI security key (`security:change_key`) while simcard is inactive, otherwise the PIN/PUK
+  codes become unreadable. Activate the plugin first.
+
+See [CHANGELOG.md](CHANGELOG.md) for details.
+
+## Development
+
+A Docker environment (GLPI 12, and GLPI 11 for upgrade tests) is described in [tools/docker/README.md](tools/docker/README.md).
 
 ## Contributing
 

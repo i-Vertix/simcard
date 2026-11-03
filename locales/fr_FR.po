@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-04-23 20:42+0200\n"
+"POT-Creation-Date: 2014-04-23 21:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,13 +28,18 @@ msgstr "Taille"
 msgid "Provider"
 msgstr "Opérateur"
 
-#: hook.php:165 inc/simcard.class.php:409 inc/simcardvoltage.class.php:41
+#: hook.php:165 hook.php:231 inc/simcard.class.php:197
+#: inc/simcard.class.php:409 inc/simcardvoltage.class.php:41
 msgid "Voltage"
 msgstr "Voltage"
 
 #: hook.php:166 inc/simcard.class.php:167 inc/simcardtype.class.php:41
 msgid "Type of SIM card"
 msgstr "Type de carte SIM"
+
+#: hook.php:222 inc/simcard.class.php:243 inc/simcard.class.php:443
+msgid "Phone number"
+msgstr "Numéro de téléphone"
 
 #: setup.php:130
 msgid "Sim cards management"
@@ -44,15 +49,11 @@ msgstr "Gestion de cartes SIM"
 msgid "Right manager"
 msgstr "Gestion des droits"
 
-#: inc/simcard.class.php:54
+#: inc/profile.class.php:263 inc/simcard.class.php:54
 msgid "SIM card"
 msgid_plural "SIM cards"
 msgstr[0] "Carte SIM"
 msgstr[1] "Cartes SIM"
-
-#: inc/simcard.class.php:243 inc/simcard.class.php:443
-msgid "Phone number"
-msgstr "Numéro de téléphone"
 
 #: inc/simcard.class.php:253 inc/simcard.class.php:367
 msgid "IMSI"
@@ -77,3 +78,21 @@ msgstr "PUK 2"
 #: inc/simcard_item.class.php:217
 msgid "New SIM card"
 msgstr "Nouvelle carte SIM"
+
+#: src/Simcard.php:235
+msgid ""
+"Unable to encrypt the PIN and PUK codes: check the GLPI security key "
+"(glpicrypt.key)."
+msgstr ""
+
+#: templates/simcard_item.html.twig:11
+msgid "Connect a Device"
+msgstr ""
+
+#: templates/simcard_item.html.twig:11
+msgid "Connect SIM cards"
+msgstr ""
+
+#: templates/simcard.html.twig:156
+msgid "Clear"
+msgstr ""
